@@ -1,0 +1,51 @@
+{# Customer report — ข้อมูลลูกค้า + ยอดซื้อ + credit limit + ประวัติ payment (ราย 1 ลูกค้า)
+   ต้องการ context:
+     customer = {name, contact, city, country, phone, credit_limit, sales_rep}
+     kpis     = {total_purchased, total_paid, balance, order_count}
+     orders   = [{order_number, order_date, status, amount}]
+     payments = [{check_number, payment_date, amount}]
+   data มาจาก: customers + orders + orderdetails + payments + employees #}
+{% extends "base.html" %}
+{% block title %}Customer Report — {{ customer.name }}{% endblock %}
+{% block heading %}👤 Customer Report — {{ customer.name }}{% endblock %}
+
+{% block content %}
+  <table class="data" style="margin-bottom:8px">
+    <tbody>
+      <tr><th>ผู้ติดต่อ</th><td>{{ customer.contact }}</td><th>โทร</th><td>{{ customer.phone }}</td></tr>
+      <tr><th>ที่ตั้ง</th><td>{{ customer.city }}, {{ customer.country }}</td><th>Sales Rep</th><td>{{ customer.sales_rep }}</td></tr>
+      <tr><th>Credit Limit</th><td class="num">{{ customer.credit_limit }}</td><th></th><td></td></tr>
+    </tbody>
+  </table>
+
+  <section class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">ยอดซื้อรวม</div><div class="kpi-value">{{ kpis.total_purchased | default("—") }}</div></div>
+    <div class="kpi-card"><div class="kpi-label">ชำระแล้ว</div><div class="kpi-value">{{ kpis.total_paid | default("—") }}</div></div>
+    <div class="kpi-card"><div class="kpi-label">คงค้าง</div><div class="kpi-value">{{ kpis.balance | default("—") }}</div></div>
+    <div class="kpi-card"><div class="kpi-label">จำนวนออเดอร์</div><div class="kpi-value">{{ kpis.order_count | default("—") }}</div></div>
+  </section>
+
+  <h2>ประวัติการสั่งซื้อ</h2>
+  <table class="data">
+    <thead><tr><th>Order #</th><th>วันที่</th><th>สถานะ</th><th class="num">ยอด</th></tr></thead>
+    <tbody>
+      {% for o in orders %}
+      <tr><td>{{ o.order_number }}</td><td>{{ o.order_date }}</td><td>{{ o.status }}</td><td class="num">{{ o.amount }}</td></tr>
+      {% else %}
+      <tr><td colspan="4">ไม่มีข้อมูล</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>ประวัติการชำระเงิน</h2>
+  <table class="data">
+    <thead><tr><th>Check #</th><th>วันที่ชำระ</th><th class="num">จำนวนเงิน</th></tr></thead>
+    <tbody>
+      {% for p in payments %}
+      <tr><td>{{ p.check_number }}</td><td>{{ p.payment_date }}</td><td class="num">{{ p.amount }}</td></tr>
+      {% else %}
+      <tr><td colspan="3">ไม่มีข้อมูล</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

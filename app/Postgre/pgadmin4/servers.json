@@ -1,0 +1,13 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "classicmodels",
+      "Group": "Servers",
+      "Host": "postgres_container",
+      "Port": 5432,
+      "MaintenanceDB": "classicmodels",
+      "Username": "postgres",
+      "SSLMode": "prefer"
+    }
+  }
+}

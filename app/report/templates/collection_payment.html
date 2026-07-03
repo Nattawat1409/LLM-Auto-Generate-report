@@ -1,0 +1,47 @@
+{# Collection / payment report — เทียบ orders (billed) vs payments (paid) + ลูกค้าค้างชำระ
+   ต้องการ context:
+     as_of = วันที่ตัดยอด (string)
+     kpis  = {total_billed, total_collected, outstanding, overdue_customers}
+     rows  = [{customer_name, billed, paid, balance, status}]   # status: "paid" | "outstanding"
+   data มาจาก: customers + orders + orderdetails (billed) + payments (paid)
+   balance = SUM(orderdetails.quantityOrdered*priceEach) - SUM(payments.amount) #}
+{% extends "base.html" %}
+{% block title %}Collection / Payment Report{% endblock %}
+{% block heading %}💳 Collection / Payment Report{% endblock %}
+
+{% block content %}
+  <p style="color:#667085;margin:0 0 4px">ตัดยอด ณ: {{ as_of | default("—") }}</p>
+
+  <section class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">ยอดตั้งบิลรวม</div><div class="kpi-value">{{ kpis.total_billed | default("—") }}</div></div>
+    <div class="kpi-card"><div class="kpi-label">เก็บได้แล้ว</div><div class="kpi-value">{{ kpis.total_collected | default("—") }}</div></div>
+    <div class="kpi-card"><div class="kpi-label">ยอดคงค้าง</div><div class="kpi-value">{{ kpis.outstanding | default("—") }}</div></div>
+    <div class="kpi-card"><div class="kpi-label">ลูกค้าค้างชำระ</div><div class="kpi-value">{{ kpis.overdue_customers | default("—") }}</div></div>
+  </section>
+
+  <h2>สรุปยอดค้างชำระรายลูกค้า</h2>
+  <table class="data">
+    <thead>
+      <tr><th>ลูกค้า</th><th class="num">ยอดตั้งบิล</th><th class="num">ชำระแล้ว</th><th class="num">คงค้าง</th><th>สถานะ</th></tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r.customer_name }}</td>
+        <td class="num">{{ r.billed }}</td>
+        <td class="num">{{ r.paid }}</td>
+        <td class="num">{{ r.balance }}</td>
+        <td>
+          {% if r.status == "outstanding" %}
+            <span class="badge warn">ค้างชำระ</span>
+          {% else %}
+            <span class="badge ok">ชำระครบ</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5">ไม่มีข้อมูล</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

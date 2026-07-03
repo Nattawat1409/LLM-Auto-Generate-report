@@ -1,0 +1,68 @@
+{# Sales report — ยอดขายรายเดือน / ราย product line / top products / ตาม sales rep
+   ต้องการ context:
+     kpis         = {total_revenue, total_orders, avg_order_value, products_sold}
+     monthly      = [{month, revenue, orders}]
+     by_line      = [{product_line, revenue, qty}]
+     top_products = [{product_name, product_line, qty, revenue}]
+     by_rep       = [{rep_name, office_city, revenue, orders}]
+   data มาจาก: orders + orderdetails + products + productlines + employees + offices #}
+{% extends "base.html" %}
+{% block title %}Sales Report{% endblock %}
+{% block heading %}📈 Sales Report{% endblock %}
+
+{% block content %}
+  <section class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">ยอดขายรวม</div><div class="kpi-value">{{ kpis.total_revenue | default("—") }}</div></div>
+    <div class="kpi-card"><div class="kpi-label">จำนวนออเดอร์</div><div class="kpi-value">{{ kpis.total_orders | default("—") }}</div></div>
+    <div class="kpi-card"><div class="kpi-label">ยอดเฉลี่ย/ออเดอร์</div><div class="kpi-value">{{ kpis.avg_order_value | default("—") }}</div></div>
+    <div class="kpi-card"><div class="kpi-label">สินค้าที่ขาย</div><div class="kpi-value">{{ kpis.products_sold | default("—") }}</div></div>
+  </section>
+
+  <h2>ยอดขายรายเดือน</h2>
+  <table class="data">
+    <thead><tr><th>เดือน</th><th class="num">ยอดขาย</th><th class="num">ออเดอร์</th></tr></thead>
+    <tbody>
+      {% for r in monthly %}
+      <tr><td>{{ r.month }}</td><td class="num">{{ r.revenue }}</td><td class="num">{{ r.orders }}</td></tr>
+      {% else %}
+      <tr><td colspan="3">ไม่มีข้อมูล</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>ยอดขายตาม Product Line</h2>
+  <table class="data">
+    <thead><tr><th>Product Line</th><th class="num">ยอดขาย</th><th class="num">จำนวนชิ้น</th></tr></thead>
+    <tbody>
+      {% for r in by_line %}
+      <tr><td>{{ r.product_line }}</td><td class="num">{{ r.revenue }}</td><td class="num">{{ r.qty }}</td></tr>
+      {% else %}
+      <tr><td colspan="3">ไม่มีข้อมูล</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Top Products</h2>
+  <table class="data">
+    <thead><tr><th>สินค้า</th><th>Product Line</th><th class="num">จำนวน</th><th class="num">ยอดขาย</th></tr></thead>
+    <tbody>
+      {% for r in top_products %}
+      <tr><td>{{ r.product_name }}</td><td>{{ r.product_line }}</td><td class="num">{{ r.qty }}</td><td class="num">{{ r.revenue }}</td></tr>
+      {% else %}
+      <tr><td colspan="4">ไม่มีข้อมูล</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>ยอดขายตาม Sales Rep</h2>
+  <table class="data">
+    <thead><tr><th>Sales Rep</th><th>Office</th><th class="num">ยอดขาย</th><th class="num">ออเดอร์</th></tr></thead>
+    <tbody>
+      {% for r in by_rep %}
+      <tr><td>{{ r.rep_name }}</td><td>{{ r.office_city }}</td><td class="num">{{ r.revenue }}</td><td class="num">{{ r.orders }}</td></tr>
+      {% else %}
+      <tr><td colspan="4">ไม่มีข้อมูล</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
