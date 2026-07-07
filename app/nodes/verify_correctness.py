@@ -41,18 +41,11 @@ def verifyCorrectnessNode(state: state) -> dict:
         HumanMessage(content=user_question),
     ])
 
-
-    check_correctness = response.is_correct             # get value from define format of true or false 
-    get_detail_correctness = response.detail_report     # get the actual detail and explaination from query output to expand and analyse the detail 
-
-    state['is_correct_verify_correctness'] = check_correctness          # is verify true or false
-    state['detail_verify_correctness']= get_detail_correctness          # get detail from query result to make complete data for report 
-
-    # get 3 paremeters from VerifyCorrectnessOutput (define format)
+    # return keys must match the state schema (models/states/state.py) so the
+    # next nodes read from state.get(...)
     return {
-        "is_correct": response.is_correct,
-        "reasoning": response.reasoning,
-        "detail_report": response.detail_report,
+        "is_correct_verify_correctness": response.is_correct,   # bool: is verify true or false
+        "detail_verify_correctness": response.detail_report,    # detail for report / html_details
     }
 
 # test standalone function (wire 3 function corporate together) #

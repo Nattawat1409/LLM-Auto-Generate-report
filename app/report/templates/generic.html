@@ -1,0 +1,41 @@
+{# Generic report — fallback for ad-hoc queries that don't fit the 3 fixed formats.
+   Consumes the flexible content shape:
+     report_title, summary,
+     kpis     = [{label, value}]
+     tables   = [{title, columns, rows}]   # rows = [[cell, ...], ...]
+     sections = [{heading, body}]
+#}
+{% extends "base.html" %}
+{% block title %}{{ report_title | default("Report") }}{% endblock %}
+{% block heading %}📊 {{ report_title | default("Report") }}{% endblock %}
+
+{% block content %}
+  {% if summary %}<p style="color:#475467;margin:0 0 8px">{{ summary }}</p>{% endif %}
+
+  {% if kpis %}
+  <section class="kpi-grid">
+    {% for k in kpis %}
+    <div class="kpi-card"><div class="kpi-label">{{ k.label }}</div><div class="kpi-value">{{ k.value | default("—") }}</div></div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% for t in tables %}
+  <h2>{{ t.title }}</h2>
+  <table class="data">
+    <thead><tr>{% for col in t.columns %}<th>{{ col }}</th>{% endfor %}</tr></thead>
+    <tbody>
+      {% for row in t.rows %}
+      <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+      {% else %}
+      <tr><td colspan="{{ t.columns | length }}">ไม่มีข้อมูล</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endfor %}
+
+  {% for s in sections %}
+  <h2>{{ s.heading }}</h2>
+  <p>{{ s.body }}</p>
+  {% endfor %}
+{% endblock %}

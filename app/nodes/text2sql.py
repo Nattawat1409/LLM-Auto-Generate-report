@@ -24,6 +24,10 @@ def Text2SQLNode(state: state) -> dict:
     response = structured_answer_llm.invoke([
         SystemMessage(content=(
             "You're the expert of SQL query generator, you will help me to generate SQL query from my question.\n"
+            "The database is PostgreSQL. Use PostgreSQL syntax and functions ONLY.\n"
+            "- For dates use PostgreSQL functions, e.g. EXTRACT(YEAR FROM orderdate) = 2004 "
+            "or orderdate BETWEEN '2004-01-01' AND '2004-12-31'.\n"
+            "- NEVER use SQLite/MySQL functions like STRFTIME, DATE_FORMAT, or YEAR().\n"
             "Use only the following real database schema — do not assume any other tables or columns:\n"
             f"{schema_text}\n\n"
             "Rule: never use SELECT COUNT(*). Always count by the table's unique identifier column instead.\n\n"

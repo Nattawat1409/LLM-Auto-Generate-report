@@ -1,21 +1,39 @@
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, Literal
+from typing import Optional
+
+ReportType = Literal["generic", "sales", "customer", "collection_payment"] # generic fallback + 3 fixed
+HITLAction = Literal["approve", "requery"]                                 # 2 actions depend on user satisfication
+PersonalizeAction = Literal["accept", "regenerate_report"]                 # 2 options
 
 class state(TypedDict):
     # text to SQL 
     user_input: str
     output_text2SQL: str
+
     # Exceute SQL node
     execute_sql: str
+    execute_error: Optional[str]   # None on success, error string if the query failed
+
     # Verify correctness + detail nodes
     is_correct_verify_correctness: bool # Verify correctness node as True or false
     detail_verify_correctness: str # erify correctness node as details
-    # Human in the loop node
-    human_in_the_loop: str
-    # Generate report node
+
+    # === Human-in-the-loop (curator/annotator) ===
+    hitl_action: HITLAction        # "approve" or "requery"
+    report_type: ReportType        # which of the 3 templates the user picked
+    human_notes: str               # free-text: emphasis + context + exclude write by user
+    requery_feedback: str          # ถ้ากด requery button
+
+    # generate report node (python data)
     generate_report: str
+    
+    # html_details node (convert .py -> .html)
     html_detail: str
+
+    # Generate_pdf node (PDF)
     generate_pdf: str
     personalize_report: str
+
     # Define return route
     is_satisfy_personalize_report: bool # send to re-generate report if format not satisfy user input
     is_data_satisfied: bool # send to retry user input 

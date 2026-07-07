@@ -2,6 +2,8 @@ from models.states import state
 from db import engine
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
+from langgraph.graph import END
+
 
 def executeSQLNode(state: state) -> dict:
     """This function implement execute SQL syntax from outpute generated getting into actual database Postgresql locate on pgAdmin and return the result back to user"""
@@ -17,12 +19,11 @@ def executeSQLNode(state: state) -> dict:
             rows = result.fetchall()
     except SQLAlchemyError as error:
         print(f"The error from SQL execution: {error}")
-        return {"rows": [], "row_count": 0, "sql_query": sql_query, "error": str(error)}
+        # surface the error so downstream can tell "query FAILED" from "0 rows found"
+        return {"execute_sql": None , "execute_error": str(error)}
 
-    result_execute_sql = rows
-    state['execute_sql'] = result_execute_sql     # get the result after fetch query
-
-    return {"execute_sql": result_execute_sql, "len_execute_query": len(result_execute_sql), "sql_query": sql_query, "error": None}
+    # return keys match the state schema (models/states/state.py)
+    return {"execute_sql": rows, "execute_error": None}
 
 
 # test standalone function #
@@ -37,5 +38,5 @@ if __name__ == "__main__":
     text2sql_result = Text2SQLNode({"user_input": "generate report for number of offices in the database and their locations"})
     result = executeSQLNode({"output_text2SQL": text2sql_result["output_sql"]})
     print(f"Generated SQL: {text2sql_result['output_sql']}")
-    print(f"Result number of offices: {result['rows']}")
-    print(f"Result number of displayed rows: {result['row_count']}")
+    print(f"Result rows: {result['execute_sql']}")
+    print(f"Result row count: {len(result['execute_sql'])}")
