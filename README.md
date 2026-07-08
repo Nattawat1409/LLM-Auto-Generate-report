@@ -2,5 +2,19 @@
 LLM with autogenerate report to get personalize from user to integrate with Human in the Loop.
 
 ## AI Auto Generate Report : Graph Structure ## 
-<img width="303" height="740" alt="Screenshot 2569-07-06 at 00 08 13" src="https://github.com/user-attachments/assets/2c70cada-f385-4cea-b4f3-c3ea6bef22c9" />
-
+```mermaid
+flowchart TD
+    START([START · user_input]) --> SCHEMA{schema<br/>question relates to DB?}
+    SCHEMA -->|not data-related| DONE([end])
+    SCHEMA -->|data-related| T2S[text2sql]
+    T2S --> EXEC[execute_sql · Postgres]
+    EXEC --> VERIFY[verify_correctness · data details]
+    VERIFY --> HITL{human_in_the_loop<br/>add emphasis / context / exclude rows}
+    HITL -->|re-query · data doesn't match intent| T2S
+    HITL -->|approve + emphasis| GEN[generate_report · LLM → HTML]
+    GEN --> HTMLD[html_details · HTML code with details]
+    HTMLD --> PDF[generate_pdf]
+    PDF --> PERS{personalize · review report}
+    PERS -->|report format not satisfy| GEN
+    PERS -->|everything satisfy| DONE
+```
