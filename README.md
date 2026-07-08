@@ -4,7 +4,7 @@ LLM with autogenerate report to get personalize from user to integrate with Huma
 ## AI Auto Generate Report : Graph Structure ## 
 ```mermaid
 flowchart TD
-    START([START · user_input]) --> SCHEMA{schema<br/>question relates to DB?}
+    START([START · user_input]) --> SCHEMA{Schema Reader<br/>question relates to DB?}
     SCHEMA -->|not data-related| DONE([end])
     SCHEMA -->|data-related| T2S[text2sql]
     T2S --> EXEC[execute_sql · Postgres]
