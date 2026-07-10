@@ -1,0 +1,60 @@
+table_name,column_name,data_type,nullable,primary_key
+customers,customernumber,INTEGER,False,True
+customers,customername,VARCHAR(50),False,False
+customers,contactlastname,VARCHAR(50),False,False
+customers,contactfirstname,VARCHAR(50),False,False
+customers,phone,VARCHAR(50),False,False
+customers,addressline1,VARCHAR(50),False,False
+customers,addressline2,VARCHAR(50),True,False
+customers,city,VARCHAR(50),False,False
+customers,state,VARCHAR(50),True,False
+customers,postalcode,VARCHAR(15),True,False
+customers,country,VARCHAR(50),False,False
+customers,salesrepemployeenumber,INTEGER,True,False
+customers,creditlimit,"NUMERIC(10, 2)",True,False
+payments,customernumber,INTEGER,False,True
+payments,checknumber,VARCHAR(50),False,True
+payments,paymentdate,DATE,False,False
+payments,amount,"NUMERIC(10, 2)",False,False
+orders,ordernumber,INTEGER,False,True
+orders,orderdate,DATE,False,False
+orders,requireddate,DATE,False,False
+orders,shippeddate,DATE,True,False
+orders,status,VARCHAR(15),False,False
+orders,comments,TEXT,True,False
+orders,customernumber,INTEGER,False,False
+productlines,productline,VARCHAR(50),False,True
+productlines,textdescription,VARCHAR(4000),True,False
+productlines,htmldescription,TEXT,True,False
+productlines,image,BYTEA,True,False
+products,productcode,VARCHAR(15),False,True
+products,productname,VARCHAR(70),False,False
+products,productline,VARCHAR(50),False,False
+products,productscale,VARCHAR(10),False,False
+products,productvendor,VARCHAR(50),False,False
+products,productdescription,TEXT,False,False
+products,quantityinstock,SMALLINT,False,False
+products,buyprice,"NUMERIC(10, 2)",False,False
+products,msrp,"NUMERIC(10, 2)",False,False
+employees,employeenumber,INTEGER,False,True
+employees,lastname,VARCHAR(50),False,False
+employees,firstname,VARCHAR(50),False,False
+employees,extension,VARCHAR(10),False,False
+employees,email,VARCHAR(100),False,False
+employees,officecode,VARCHAR(10),False,False
+employees,reportsto,INTEGER,True,False
+employees,jobtitle,VARCHAR(50),False,False
+offices,officecode,VARCHAR(10),False,True
+offices,city,VARCHAR(50),False,False
+offices,phone,VARCHAR(50),False,False
+offices,addressline1,VARCHAR(50),False,False
+offices,addressline2,VARCHAR(50),True,False
+offices,state,VARCHAR(50),True,False
+offices,country,VARCHAR(50),False,False
+offices,postalcode,VARCHAR(15),False,False
+offices,territory,VARCHAR(10),False,False
+orderdetails,ordernumber,INTEGER,False,True
+orderdetails,productcode,VARCHAR(15),False,True
+orderdetails,quantityordered,INTEGER,False,False
+orderdetails,priceeach,"NUMERIC(10, 2)",False,False
+orderdetails,orderlinenumber,SMALLINT,False,False

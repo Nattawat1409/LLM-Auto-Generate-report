@@ -1,4 +1,4 @@
-from models.states import state
+from models import state
 from db.schema import get_schema_text
 from llm.client import llm
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -24,8 +24,20 @@ def verifyCorrectnessNode(state: state) -> dict:
     user_question = state.get("user_input")
     sql_output = state.get("output_text2SQL")
     execute_sql_result = state.get("execute_sql")
+    execute_error = state.get("execute_error")
 
-    #details roughtly schema 
+    # Deterministic check FIRST: if execution failed, the result is not "0 rows",
+    # it's a broken query. Don't ask the LLM to interpret a None it will hallucinate on.
+    if execute_error:
+        return {
+            "is_correct_verify_correctness": False,
+            "detail_verify_correctness": (
+                "SQL execution failed after automatic retries, so no data could be "
+                f"verified.\n\nQuery:\n{sql_output}\n\nDatabase error:\n{execute_error}"
+            ),
+        }
+
+    #details roughtly schema
     schema_text = get_schema_text()
 
     response = structured_verify_llm.invoke([
@@ -55,7 +67,7 @@ if __name__ == "__main__":
     
     user_input = "generate report for number of offices in the database and their locations" # test it for i can generate the report 
     text2sql_result = Text2SQLNode({"user_input": user_input})
-    exec_result = executeSQLNode({"output_text2SQL": text2sql_result["output_sql"]}) # return dict : output_sql
+    exec_result = executeSQLNode({"output_text2SQL": text2sql_result["output_text2SQL"]}) # return dict : output_text2SQL
     verify_result = verifyCorrectnessNode({
         "user_input": user_input,
         **text2sql_result,

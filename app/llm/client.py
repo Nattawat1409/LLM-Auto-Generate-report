@@ -9,6 +9,7 @@ llm = ChatOpenAI(
     model="google/gemini-2.5-flash",
     base_url=os.environ["LITELLM_URL"],
     api_key=os.environ["API_KEY"],
+    temperature=0.3
 )
 
 # test standalone function #

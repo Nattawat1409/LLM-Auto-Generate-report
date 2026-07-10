@@ -1,3 +1,7 @@
+import csv
+import io
+from pathlib import Path
+
 from sqlalchemy import inspect
 
 from db.engine import engine
@@ -13,6 +17,13 @@ def get_schema_text() -> str:
     return "\n".join(lines)
 
 
+
 # test standalone function #
 if __name__ == "__main__":
+    print("=== schema text ===")
     print(get_schema_text())
+    print("\n=== schema csv ===")
+    # write to db/schema.csv next to this file
+    out = Path(__file__).resolve().parent / "schema.csv"
+    test_path = Path(__file__).resolve().parent
+    print(f"here is the path : {test_path}")

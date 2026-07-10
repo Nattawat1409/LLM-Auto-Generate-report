@@ -12,7 +12,7 @@ if os.path.isdir(_BREW_LIB):
 from weasyprint import HTML   # noqa: E402  (must come after the env var above)
 from models.states import state
 
-# output/ lives at the project root (app/nodes/generate_pdf.py -> parents[2] = repo root)
+# to reference path :  parents[2] = /Users/nattawat1409/Desktop/LLM-Auto-Generate-report
 OUTPUT_DIR = Path(__file__).resolve().parents[2] / "output"         # name directory folder as "output" 
 
 
@@ -25,9 +25,9 @@ def generate_pdf(state: state) -> dict:
     report_type = state.get("report_type") or "generic"
 
     OUTPUT_DIR.mkdir(exist_ok=True)
-    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S") # get current time
     pdf_path = OUTPUT_DIR / f"report_{report_type}_{stamp}.pdf"
-
+    
     HTML(string=html_doc).write_pdf(str(pdf_path))
 
     return {"generate_pdf": str(pdf_path),
