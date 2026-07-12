@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from typing import Literal
+from typing import Literal , Optional
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.types import Command
 from langgraph.graph import END
@@ -8,8 +8,29 @@ from pydantic import BaseModel, Field
 from llm import llm
 from models import state
 
-# ── 1. Structured output schema ───────────────────────────────────────────────
+# ── 1. Parse text to classify free text = "style" or "content" ────────────────
+class StyleOverride(BaseModel):
+    is_style_change: bool
+    text_color: Optional[str] = None
+    header_color: Optional[str] = None
+    footer_color: Optional[str] = None
+    font_size: Optional[str] = None
 
+# system prompt so the parser reliably classifies AND returns CSS-ready values
+_STYLE_PARSE_PROMPT = """\
+Classify the user's report feedback as a STYLE change or a CONTENT change.
+- STYLE = colors / font size / visual theme only.
+- CONTENT = wording, structure, tone, or which data to emphasise.
+
+If STYLE: set is_style_change=true and fill ONLY the fields the user mentions with
+CSS-ready values — colors as hex (e.g. "#2563eb") or a valid CSS color name (e.g. "navy"),
+font_size with a unit (e.g. "14px"). Leave every unmentioned field null.
+If CONTENT: set is_style_change=false and leave ALL color / font_size fields null.
+"""
+
+_style_parse_llm = llm.with_structured_output(StyleOverride)
+
+# ── 2. Structured output schema ───────────────────────────────────────────────
 class PersonalizationOptions(BaseModel):
     """Three distinct AI-proposed options to improve the report."""
 
@@ -32,9 +53,9 @@ class PersonalizationOptions(BaseModel):
         )
     )
 
-_structured_llm = llm.with_structured_output(PersonalizationOptions)
+_structured_llm = llm.with_structured_output(PersonalizationOptions) 
 
-# ── 2. System prompt ──────────────────────────────────────────────────────────
+# ── 3. System prompt Pydantic : Select option ──────────────────────────────────────────────────────────
 
 _SYSTEM_PROMPT = """\
 You are a senior report personalisation assistant.
@@ -47,7 +68,16 @@ Rules:
 - Describe only what CHANGES, not the current state.
 """
 
-# ── 3. Node ───────────────────────────────────────────────────────────────────
+# ── 3. System prompt Pydantic : classify "style" or "content" report ─────────────────────────────────────
+
+_STYLE_PARSE_PROMPT = """Classify the user's report feedback as a STYLE change or a CONTENT change.
+STYLE = colors, font size, visual theme only. CONTENT = wording, structure, data emphasis.
+If style: set is_style_change=true and fill only the fields the user mentions with
+CSS-ready values — colors as hex (#2563eb) or valid CSS color names, font_size with a unit (e.g. "14px").
+Leave unmentioned fields null. If content: set is_style_change=false and leave all color/size fields null."""
+
+
+# ── 5. Node ───────────────────────────────────────────────────────────────────
 
 def personalize(state: state) -> Command[Literal["generate_report", "__end__"]]:
     """
@@ -64,12 +94,13 @@ def personalize(state: state) -> Command[Literal["generate_report", "__end__"]]:
     """
 
     # ── Load HTML from state (produced by html_details node) ─────────────
-    html_content: str = state.get("html_detail", "").strip()
-    is_satisfy = False      # set default preference not satisfy 
+    html_content: str = state['html_detail']
+    html_path: str = state['html_path']
+    is_satisfy = False      # set default as not satisfy 
     
     if not html_content:
         # fallback: try reading from file path if node stored a path instead
-        html_path = state.get("html_path", "")
+        html_path = state['html_path']
         if html_path and Path(html_path).exists():
             html_content = Path(html_path).read_text(encoding="utf-8")
         else:
@@ -124,12 +155,33 @@ def personalize(state: state) -> Command[Literal["generate_report", "__end__"]]:
 
         elif choice == "4":                             # Free text
             user_input = input("Describe your preference: ").strip()
+            # parse use_input "content" or "style"
             if not user_input:
                 print("  ⚠  Cannot be empty. Try again.")
                 continue
-            preference = user_input
+
+            parsed_text = _style_parse_llm.invoke([
+                SystemMessage(content=_STYLE_PARSE_PROMPT),
+                HumanMessage(content=user_input),
+            ])
+
+            # if parsed = "style" -> route straight back with theme fields only
+            if parsed_text.is_style_change:
+                print("\n✔  Custom preference saved for Style (colors / font).")
+                return Command(goto="generate_report", update={
+                    "theme_text_color": parsed_text.text_color,
+                    "theme_header_color": parsed_text.header_color,
+                    "theme_footer_color": parsed_text.footer_color,
+                    "theme_font_size": parsed_text.font_size,
+                    "is_style_only": True,
+                    "is_satisfy_personalize_report": False,
+                    })
+
+
+            # content change -> carry the user's free text as the feedback
+            preference = user_input     # set to personalize report back to generate_report node
             goto = "generate_report"
-            print(f"\n✔  Custom preference saved.")
+            print("\n✔  Custom preference saved for Content report.")
             break
 
         elif choice == "5":                             # Accept as-is
@@ -146,7 +198,8 @@ def personalize(state: state) -> Command[Literal["generate_report", "__end__"]]:
     return Command(
         goto=goto,
         update={"personalize_report": preference,
-                "is_satisfy_personalize_report": is_satisfy
+                "is_satisfy_personalize_report": is_satisfy,
+                "is_style_only": False,             # reset to "False" when user edit "content report" not "style report"
                 },
     )
 

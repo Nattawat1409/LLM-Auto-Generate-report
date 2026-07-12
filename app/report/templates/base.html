@@ -10,10 +10,11 @@
     * { box-sizing: border-box; }
     body {
       font-family: "Sarabun", "Helvetica Neue", Arial, sans-serif;
-      color: #1f2933; font-size: 13px; margin: 0;
+      color: {{ theme_text_color | default('#1f2933', true) }};
+      font-size: {{ theme_font_size | default('13px', true) }}; margin: 0;
     }
-    .report-header { border-bottom: 3px solid #2563eb; padding-bottom: 12px; margin-bottom: 20px; }
-    .report-header h1 { margin: 0 0 6px; font-size: 22px; }
+    .report-header { border-bottom: 3px solid {{ theme_header_color | default('#2563eb', true) }}; padding-bottom: 12px; margin-bottom: 20px; }
+    .report-header h1 { margin: 0 0 6px; font-size: 22px; color: {{ theme_header_color | default('#2563eb', true) }}; }
     .report-header .meta { color: #667085; font-size: 12px; display: flex; gap: 20px; }
     h2 { font-size: 15px; margin: 24px 0 8px; color: #1e3a8a; }
 
@@ -38,7 +39,7 @@
     .badge.warn { background: #fee2e2; color: #991b1b; }
 
     .report-footer { margin-top: 28px; padding-top: 10px; border-top: 1px solid #e4e7ec;
-      color: #98a2b3; font-size: 11px; text-align: center; }
+      color: {{ theme_footer_color | default('#98a2b3', true) }}; font-size: 11px; text-align: center; }
   </style>
 </head>
 <body>

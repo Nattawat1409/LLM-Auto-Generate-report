@@ -10,7 +10,7 @@ class Text2SQLOutput(BaseModel):
     output_sql: str = Field(description="The generated correctSQL query from the natural language question.")
 
 # to update new specific value of temperature by no affect llm.client.py
-sql_llm = llm.model_copy(update={"temperature": 0}) # deterministic response without randomness
+sql_llm = llm.model_copy(update={"temperature": 0})             # make it deterministic
 structured_answer_llm = sql_llm.with_structured_output(Text2SQLOutput)
 
 # function to convert user question into SQL query using LLM

@@ -41,11 +41,18 @@ class state(TypedDict):
 
     # Generate_pdf node (PDF)
     generate_pdf: str
-    personalize_report: str
+
 
     # Define return route
     document_pdf: str 
     is_satisfy_personalize_report: bool # send to re-generate report if format not satisfy user input
     is_data_satisfied: bool # send to retry user input 
 
-    
+
+    # personalize node (return values)
+    personalize_report: str             #feeback text to generate report
+    theme_text_color : Optional[str]    #change all text color within .html 
+    theme_header_color : Optional[str]  #change header color  in .html
+    theme_footer_color : Optional[str]  #change footer color  in .html
+    theme_font_size : Optional[str]      #change font-size of text in .html
+    is_style_only : bool                # flag to generate_report skip node generate_report then go to html_details->generate_pdf (immediately)

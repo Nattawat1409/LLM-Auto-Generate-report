@@ -20,11 +20,16 @@ def html_details(state: state) -> dict:
     No LLM here — generate_report already produced the data; this is templating.
     """
     
-    report_type = state.get("report_type") or "generic"
-    report_data = state.get("generate_report")
-
-    # pydantic model -> plain dict so Jinja can access fields as template vars
+    report_type = state["report_type"]              # get report type
+    report_data = state["generate_report"]          # generate_report details from pervious node 
+    
+    # pydantic model -> dict can access by Jinja for making template
     context = report_data.model_dump()
+
+    # Inject all editable theme key into context 
+    for key in ("theme_text_color", "theme_header_color","theme_footer_color", "theme_font_size"):
+        context[key] = state.get(key)
+
     context.setdefault("generated_at", datetime.now().strftime("%Y-%m-%d %H:%M"))
 
     template = _env.get_template(f"{report_type}.html")     # call jinja2 template
@@ -49,23 +54,7 @@ def html_details(state: state) -> dict:
 if __name__ == "__main__":
     from nodes.generate_report import generateReportNode    # generate_report node
 
-    # gen = generateReportNode({
-    #     "report_type": "sales",
-    #     "execute_sql": [('Classic Cars', 1929192, 950), ('Vintage Cars', 856245, 600),
-    #                     ('Motorcycles', 573312, 400)],
-    #     "detail_verify_correctness": "Revenue and quantity by product line in 2004.",
-    #     "human_notes": "Highlight Classic Cars as the top line.",
-    # })
-    
-    # # use html_details node
-    # result = html_details({
-    #     "report_type": "sales",                       # generate generic report_type
-    #     "generate_report": gen["generate_report"],      # get generate_report
-    # })
-
-    # print(f"the html files : {result["html_detail"]}")
-    # print(f"the files path: {result["html_path"]}")
-
+    # TEST ALL OF 4 TEMPLATES FORMAT #
     CASES = {
         "generic": {
             "execute_sql": [('San Francisco', 'USA', 6), ('Boston', 'USA', 2),

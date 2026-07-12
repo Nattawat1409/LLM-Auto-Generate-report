@@ -72,6 +72,7 @@ def build_graph():
 graph = build_graph() # build graph 
 
 
+#____TEST FLOW FULL GRAPH____ #
 if __name__ == "__main__":
     user_question = input("Input your question about classic model schema : ")
 

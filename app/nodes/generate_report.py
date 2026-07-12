@@ -6,11 +6,10 @@ from llm import llm
 from pathlib import Path
 
 # === Report content schemas ===
-# Each schema's fields match EXACTLY the variables its Jinja template expects
-# (report/templates/{sales,customer,collection_payment}.html). Every leaf is a
-# display-ready string so html_details can render it straight into the template.
+# Define pydantic schema structure compat with Jinja2 template
+# (report/templates/{sales,customer,collection_payment}.html) supported all of 4 templates
 
-# ---- Sales (sales.html) ----
+# ---- Sales template (sales.html) ----
 class SalesKPIs(BaseModel):
     total_revenue: str = ""
     total_orders: str = ""
@@ -49,7 +48,7 @@ class SalesReportData(BaseModel):
     by_rep: list[SalesByRep] = Field(default_factory=list)
 
 
-# ---- Customer (customer.html) ----
+# ---- Customer template (customer.html) ----
 class CustomerInfo(BaseModel):
     name: str = ""
     contact: str = ""
@@ -59,7 +58,7 @@ class CustomerInfo(BaseModel):
     credit_limit: str = ""
     sales_rep: str = ""
 
-class CustomerKPIs(BaseModel):
+class CustomerKPIs (BaseModel):
     total_purchased: str = ""
     total_paid: str = ""
     balance: str = ""
@@ -127,6 +126,9 @@ class GenericReportData(BaseModel):
     tables: list[ReportTable] = Field(default_factory=list)
     sections: list[ReportSection] = Field(default_factory=list)
 
+# for style , css , color
+class style(BaseModel):
+    color:str = Field("use the css component when user need to change the color of text or whatever contain in report")
 
 # report_type -> (schema, guidance for the prompt)
 REPORT_SCHEMAS = {
@@ -145,24 +147,31 @@ REPORT_GUIDANCE = {
 
 def generateReportNode(state: state) -> dict:
     """
-    Build the report CONTENT from the fetched data, shaped for the template the
-    user picked at human_in_the_loop (state['report_type']). Returns the matching
-    structured object for html_details to render.
+    Build report content from the fetched data, convert to template depend on
+    user picked at human_in_the_loop (state['report_type']).apply the best compatible format
+    for html_details to render file .html to before render
     """
 
+    report_type = state.get("report_type") or "generic"                 # defult = generic otherwise  = payment , sales , customer
+    data = state["execute_sql"]                                         # rows from execute_sql (must have)
+    detail = state["detail_verify_correctness"]                         # data detail from verify_correctness (must have)
+    human_notes = state.get("human_notes") or ""                        # exist or not exist is fine (no strict)
 
-    report_type = state.get("report_type") or "generic"
-    data = state.get("execute_sql")                             # rows from execute_sql
-    detail = state.get("detail_verify_correctness")             # data detail from verify_correctness
-    human_notes = state.get("human_notes") or ""                
-
-    personalize_feedback = state.get("personalize_report")      # get feedback personalize back to generate_node 
-    is_satisfy = state.get("is_satisfy_personalize_report")     # get is_user_satisfy 
+    personalize_feedback = state.get("personalize_report")              # get feedback personalize back to generate_node if "have"
+    is_satisfy = state.get("is_satisfy_personalize_report") or ""       # get user satisfication 
+    
+    # if edit only style -> skip to html_detail use previous cotent fix only style
+    if state.get("is_style_only"):
+        return {"generate_report": state["generate_report"],
+                "is_after_personalize": True}
+    
 
     # pick schema + guidance for this report type, bind structured LLM
-    schema = REPORT_SCHEMAS[report_type]
-    guidance = REPORT_GUIDANCE[report_type]
-    structured_report_llm = llm.with_structured_output(schema)
+    schema = REPORT_SCHEMAS[report_type]                                # maping to correct schema 
+    guidance = REPORT_GUIDANCE[report_type]                             # mapping to correct schame 
+
+    llm_generate_report= llm.model_copy(update={"temperature": 0})      # tune temperature = 0 prevent non-deterministic content
+    structured_report_llm = llm_generate_report.with_structured_output(schema)
     
     # fill the Human message with the data + curator context
     human_content = (
@@ -173,8 +182,7 @@ def generateReportNode(state: state) -> dict:
 
     # is this a redo triggered by personalize feedback? (used by html_details for store folder)
     is_redo = is_satisfy is False and bool(personalize_feedback)    # is_redo = user not satisfy and has personalize feedback 
-
-    # if the user rejected the previous report in personalize and not satisfy -> if condition true , 
+    # re-run send data from 
     if is_redo:
         human_content += f"\n\nUser personalization feedback (apply this):\n{personalize_feedback}"
 
