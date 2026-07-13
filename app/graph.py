@@ -63,9 +63,10 @@ def build_graph():
     builder.add_edge("html_details", "generate_pdf")
     builder.add_edge("generate_pdf", "personalize")
 
-    # personalize routes itself: -> "generate_report" or END (Command)
-    builder.add_edge("personalize",END)
-    
+    # personalize routes itself via Command: -> "generate_report" (content / both),
+    #   "html_details" (style-only, skips generate_report), or END (accept).
+    # No static edge here — it would fight the Command(goto=...) routing.
+
     return builder.compile()
 
 

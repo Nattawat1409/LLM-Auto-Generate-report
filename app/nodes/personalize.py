@@ -8,7 +8,12 @@ from pydantic import BaseModel, Field
 from llm import llm
 from models import state
 
-# ── 1. Parse text to classify free text = "style" or "content" ────────────────
+
+# ── 1. Parse classify free-text is "style" , "content" or "style and content" ────────────────
+class Parse_type_personalize(BaseModel):
+    check_type_refine:  Literal["content", "style", "content and style"] = Field(description = "check the user input from personalize report return only 3 type such as ,content,style, content and style which one is the most related to personalize report")
+
+# ── 2. Parse text when user free-text = refine "style only"────────────────────────────────
 class StyleOverride(BaseModel):
     is_style_change: bool
     text_color: Optional[str] = None
@@ -16,18 +21,37 @@ class StyleOverride(BaseModel):
     footer_color: Optional[str] = None
     font_size: Optional[str] = None
 
-# system prompt so the parser reliably classifies AND returns CSS-ready values
-_STYLE_PARSE_PROMPT = """\
-Classify the user's report feedback as a STYLE change or a CONTENT change.
-- STYLE = colors / font size / visual theme only.
-- CONTENT = wording, structure, tone, or which data to emphasise.
+# parse the user free-text refine (style , content, style and content)
+llm_parse_type = llm.with_structured_output(Parse_type_personalize) 
 
-If STYLE: set is_style_change=true and fill ONLY the fields the user mentions with
-CSS-ready values — colors as hex (e.g. "#2563eb") or a valid CSS color name (e.g. "navy"),
-font_size with a unit (e.g. "14px"). Leave every unmentioned field null.
-If CONTENT: set is_style_change=false and leave ALL color / font_size fields null.
+
+_REFINE_PROMPT = """\
+You classify a user's report personalisation feedback.
+Return exactly one label:
+- "content"           -> wording, structure, tone, or which data to emphasise
+- "style"             -> colors, font size, or visual theme only
+- "content and style" -> the feedback asks for BOTH
 """
 
+# Pure EXTRACTION prompt: the caller has already decided style is involved, so this
+# ONLY pulls out CSS-ready values. It must NOT null things out just because the user
+# ALSO asked for content changes (that is what broke the "content and style" case).
+_STYLE_PARSE_PROMPT = """\
+Extract the visual/style values the user asked for. The user may ALSO ask for content
+changes — ignore those; only capture styling here, and NEVER blank a style value just
+because content edits are present.
+
+Map to fields (fill only the ones the user mentions, leave the rest null):
+- header_color -> the report header / title / H1 colour
+- text_color   -> body text / H2 / general text colour
+- footer_color -> the footer colour
+- font_size    -> the text size
+
+Colours as hex (e.g. "#2563eb") or a valid CSS colour name (e.g. "orange", "navy").
+font_size must include a unit (e.g. "14px"). Set is_style_change=true whenever you
+captured at least one value."""
+
+# get user personalize Type = Style only
 _style_parse_llm = llm.with_structured_output(StyleOverride)
 
 # ── 2. Structured output schema ───────────────────────────────────────────────
@@ -68,18 +92,9 @@ Rules:
 - Describe only what CHANGES, not the current state.
 """
 
-# ── 3. System prompt Pydantic : classify "style" or "content" report ─────────────────────────────────────
-
-_STYLE_PARSE_PROMPT = """Classify the user's report feedback as a STYLE change or a CONTENT change.
-STYLE = colors, font size, visual theme only. CONTENT = wording, structure, data emphasis.
-If style: set is_style_change=true and fill only the fields the user mentions with
-CSS-ready values — colors as hex (#2563eb) or valid CSS color names, font_size with a unit (e.g. "14px").
-Leave unmentioned fields null. If content: set is_style_change=false and leave all color/size fields null."""
-
-
 # ── 5. Node ───────────────────────────────────────────────────────────────────
 
-def personalize(state: state) -> Command[Literal["generate_report", "__end__"]]:
+def personalize(state: state) -> Command[Literal["generate_report", "html_details", "__end__"]]:
     """
     Human-in-the-loop personalisation node.
 
@@ -159,30 +174,57 @@ def personalize(state: state) -> Command[Literal["generate_report", "__end__"]]:
             if not user_input:
                 print("  ⚠  Cannot be empty. Try again.")
                 continue
-
-            parsed_text = _style_parse_llm.invoke([
-                SystemMessage(content=_STYLE_PARSE_PROMPT),
+            
+            refine_type = llm_parse_type.invoke([
+                SystemMessage(content=_REFINE_PROMPT),
                 HumanMessage(content=user_input),
-            ])
+            ]).check_type_refine
 
-            # if parsed = "style" -> route straight back with theme fields only
-            if parsed_text.is_style_change:
-                print("\n✔  Custom preference saved for Style (colors / font).")
-                return Command(goto="generate_report", update={
-                    "theme_text_color": parsed_text.text_color,
-                    "theme_header_color": parsed_text.header_color,
-                    "theme_footer_color": parsed_text.footer_color,
-                    "theme_font_size": parsed_text.font_size,
-                    "is_style_only": True,
+            # parse CSS-ready style values whenever style is involved (cases 1 and 3)
+            style = None
+            if refine_type in ("style", "content and style"):
+                style = _style_parse_llm.invoke([
+                    SystemMessage(content=_STYLE_PARSE_PROMPT),
+                    HumanMessage(content=user_input),
+                ])
+
+            # CASE 1 — style only: SKIP generate_report, restyle existing content in html_details
+            if refine_type == "style":
+                print("\n✔  Style change → skipping content regeneration, restyling report.")
+                return Command(goto="html_details", update={
+                    "is_style_change": True,
+                    "is_content_change": False,
+                    "theme_text_color": style.text_color,
+                    "theme_header_color": style.header_color,
+                    "theme_footer_color": style.footer_color,
+                    "theme_font_size": style.font_size,
+                    "is_after_personalize": True,               # existed html_details files it under after_personalize/ 
                     "is_satisfy_personalize_report": False,
-                    })
+                })
 
+            # CASE 3 — content AND style: refine content in generate_report, then restyle in html_details
+            if refine_type == "content and style":
+                print("\n✔  Content + style change → regenerating content, then restyling.")
+                return Command(goto="generate_report", update={
+                    "is_content_change": True,
+                    "is_style_change": True,
+                    "personalize_report": user_input,   # content feedback for generate_report
+                    "theme_text_color": style.text_color,
+                    "theme_header_color": style.header_color,
+                    "theme_footer_color": style.footer_color,
+                    "theme_font_size": style.font_size,
+                    "is_satisfy_personalize_report": False,
+                })
 
-            # content change -> carry the user's free text as the feedback
-            preference = user_input     # set to personalize report back to generate_report node
-            goto = "generate_report"
-            print("\n✔  Custom preference saved for Content report.")
-            break
+            # CASE 2 — content only: traditional refine through generate_report -> html_details
+            print("\n✔  Content change → regenerating report content.")
+            return Command(goto="generate_report", update={
+                "is_content_change": True,
+                "is_style_change": False,
+                "personalize_report": user_input,       # content feedback for generate_report
+                "is_satisfy_personalize_report": False,
+            })
+
 
         elif choice == "5":                             # Accept as-is
             is_satisfy = True     # if satisfy return true
@@ -195,11 +237,13 @@ def personalize(state: state) -> Command[Literal["generate_report", "__end__"]]:
             print("  ⚠  Invalid. Please enter 1, 2, 3, 4, or 5.")
 
     # ── Return Command with routing + state update ────────────────────────
+    # AI options 1-3 are content edits (goto generate_report); choice 5 accepts (goto END).
     return Command(
         goto=goto,
         update={"personalize_report": preference,
                 "is_satisfy_personalize_report": is_satisfy,
-                "is_style_only": False,             # reset to "False" when user edit "content report" not "style report"
+                "is_style_change": False,             # these paths never touch style
+                "is_content_change": goto == "generate_report",
                 },
     )
 

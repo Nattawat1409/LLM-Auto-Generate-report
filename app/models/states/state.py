@@ -55,4 +55,6 @@ class state(TypedDict):
     theme_header_color : Optional[str]  #change header color  in .html
     theme_footer_color : Optional[str]  #change footer color  in .html
     theme_font_size : Optional[str]      #change font-size of text in .html
-    is_style_only : bool                # flag to generate_report skip node generate_report then go to html_details->generate_pdf (immediately)
+    is_style_change : bool                # flag to generate_report skip node generate_report then go to html_details->generate_pdf (immediately)
+    is_content_change: bool               # flag to generate_report content re-run since genereate_report -> html_details -> generate_pdf -> personalize 
+    is_style_and_content: bool

@@ -13,7 +13,8 @@ from weasyprint import HTML   # noqa: E402  (must come after the env var above)
 from models.states import state
 
 # to reference path :  parents[2] = /Users/nattawat1409/Desktop/LLM-Auto-Generate-report
-OUTPUT_DIR = Path(__file__).resolve().parents[2] / "output"         # name directory folder as "output" 
+# PDFs mirror the HTML layout: output/pdf_output/ (+ /after_personalize for personalize passes)
+PDF_OUTPUT_DIR = Path(__file__).resolve().parents[2] / "output" / "pdf_output"
 
 
 def generate_pdf(state: state) -> dict:
@@ -24,11 +25,11 @@ def generate_pdf(state: state) -> dict:
     html_doc = state.get("html_detail")                 # full HTML string from html_details
     report_type = state.get("report_type") or "generic"
 
-    # If new report edit from after personalize go to path : "/output/after_personalize"
+    # personalize passes go to output/pdf_output/after_personalize/, first pass to output/pdf_output/
     if state.get('is_after_personalize'):
-        target_dir = OUTPUT_DIR / "after_personalize"
+        target_dir = PDF_OUTPUT_DIR / "after_personalize"
     else:
-        target_dir = OUTPUT_DIR
+        target_dir = PDF_OUTPUT_DIR
     
     target_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")        # get current Time

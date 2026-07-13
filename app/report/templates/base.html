@@ -16,7 +16,7 @@
     .report-header { border-bottom: 3px solid {{ theme_header_color | default('#2563eb', true) }}; padding-bottom: 12px; margin-bottom: 20px; }
     .report-header h1 { margin: 0 0 6px; font-size: 22px; color: {{ theme_header_color | default('#2563eb', true) }}; }
     .report-header .meta { color: #667085; font-size: 12px; display: flex; gap: 20px; }
-    h2 { font-size: 15px; margin: 24px 0 8px; color: #1e3a8a; }
+    h2 { font-size: 15px; margin: 24px 0 8px; color: {{ theme_text_color | default('#1e3a8a', true) }}; }
 
     /* KPI cards */
     .kpi-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 4px 0 8px; }
@@ -25,7 +25,7 @@
       border-radius: 8px; padding: 12px 14px; background: #f8fafc;
     }
     .kpi-label { color: #667085; font-size: 11px; margin-bottom: 4px; }
-    .kpi-value { font-size: 20px; font-weight: 700; color: #111827; }
+    .kpi-value { font-size: 20px; font-weight: 700; color: {{ theme_text_color | default('#111827', true) }}; }
 
     /* Tables */
     table.data { border-collapse: collapse; width: 100%; margin-top: 6px; }

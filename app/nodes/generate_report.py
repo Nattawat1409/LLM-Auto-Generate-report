@@ -145,34 +145,44 @@ REPORT_GUIDANCE = {
 }
 
 
+_GENERATE_SYSTEM_PROMPT = (
+    "You are a business report writer. Turn the fetched database rows into the CONTENT of a report.\n"
+    "{guidance}\n"
+    "- Do NOT describe the database schema or column data types.\n"
+    "- Every value must be a display-ready string. Only fill fields you have data for; leave the rest empty.\n"
+    "- If a column holds the SAME value on every row (e.g. a total customer count of 98 "
+    "repeated across all rows), that is an aggregate SUMMARY, not per-row data: put it ONCE "
+    "in a KPI card and do NOT repeat it as a table column.\n"
+    "- Honour the human's emphasis / context notes when deciding what to highlight."
+)
+
+
 def generateReportNode(state: state) -> dict:
     """
-    Build report content from the fetched data, convert to template depend on
-    user picked at human_in_the_loop (state['report_type']).apply the best compatible format
-    for html_details to render file .html to before render
+    Build report CONTENT from the fetched data into the pydantic schema that
+    matches state['report_type'], for html_details to render into HTML.
+
+    Reached in two situations (STYLE-only edits never reach this node — personalize
+    routes those straight to html_details):
+      - first pass            : no personalize feedback -> fresh content
+      - content / both edits  : personalize feedback present -> refine that content
+
+    Style is NOT handled here; html_details applies the theme_* keys on every render.
     """
 
-    report_type = state.get("report_type") or "generic"                 # defult = generic otherwise  = payment , sales , customer
-    data = state["execute_sql"]                                         # rows from execute_sql (must have)
-    detail = state["detail_verify_correctness"]                         # data detail from verify_correctness (must have)
-    human_notes = state.get("human_notes") or ""                        # exist or not exist is fine (no strict)
-
-    personalize_feedback = state.get("personalize_report")              # get feedback personalize back to generate_node if "have"
-    is_satisfy = state.get("is_satisfy_personalize_report") or ""       # get user satisfication 
-    
-    # if edit only style -> skip to html_detail use previous cotent fix only style
-    if state.get("is_style_only"):
-        return {"generate_report": state["generate_report"],
-                "is_after_personalize": True}
-    
+    report_type = state.get("report_type") or "generic"     # default = generic; else sales / customer / collection_payment
+    data = state["execute_sql"]                             # rows from execute_sql (must have)
+    detail = state["detail_verify_correctness"]             # data detail from verify_correctness (must have)
+    human_notes = state.get("human_notes") or ""            # optional curator context
+    personalize_feedback = state.get("personalize_report") or ""  # content feedback from personalize (empty on first pass)
 
     # pick schema + guidance for this report type, bind structured LLM
-    schema = REPORT_SCHEMAS[report_type]                                # maping to correct schema 
-    guidance = REPORT_GUIDANCE[report_type]                             # mapping to correct schame 
+    schema = REPORT_SCHEMAS[report_type]
+    guidance = REPORT_GUIDANCE[report_type]
 
-    llm_generate_report= llm.model_copy(update={"temperature": 0})      # tune temperature = 0 prevent non-deterministic content
+    llm_generate_report = llm.model_copy(update={"temperature": 0})  # temp 0 -> deterministic content
     structured_report_llm = llm_generate_report.with_structured_output(schema)
-    
+
     # fill the Human message with the data + curator context
     human_content = (
         f"Data to report on:\n{data}\n\n"
@@ -180,28 +190,25 @@ def generateReportNode(state: state) -> dict:
         f"Human emphasis / context to include:\n{human_notes or '(none)'}"
     )
 
-    # is this a redo triggered by personalize feedback? (used by html_details for store folder)
-    is_redo = is_satisfy is False and bool(personalize_feedback)    # is_redo = user not satisfy and has personalize feedback 
-    # re-run send data from 
-    if is_redo:
-        human_content += f"\n\nUser personalization feedback (apply this):\n{personalize_feedback}"
+    # content-refine pass: merge from personalize of user (cases 2 and 3)
+    if personalize_feedback:
+        prev_report = state.get('generate_report')          # get previous report details
+        if prev_report is not None:                         # prevent from crashing by unit test function 
+            human_content += (
+                f"\n\nCurrent report content (PRESERVE everything unless the feedback "
+                f"below explicitly asks to change it):\n{prev_report.model_dump_json()}\n"      # convert form Obj to Json string bind to system prompt
+                )
+    human_content += f"\nUser feedback (apply ONLY this change):\n{personalize_feedback}"
+
 
     response = structured_report_llm.invoke([
-        SystemMessage(content=(
-            "You are a business report writer. Turn the fetched database rows into the CONTENT of a report.\n"
-            f"{guidance}\n"
-            "- Do NOT describe the database schema or column data types.\n"
-            "- Every value must be a display-ready string. Only fill fields you have data for; leave the rest empty.\n"
-            "- If a column holds the SAME value on every row (e.g. a total customer count of 98 "
-            "repeated across all rows), that is an aggregate SUMMARY, not per-row data: put it ONCE "
-            "in a KPI card and do NOT repeat it as a table column.\n"
-            "- Honour the human's emphasis / context notes when deciding what to highlight."
-        )),
+        SystemMessage(content=_GENERATE_SYSTEM_PROMPT.format(guidance=guidance)),
         HumanMessage(content=human_content),
     ])
 
-    # flag the redo so html_details can save it under output/html_output/after_personalize/
-    return {"generate_report": response, "is_after_personalize": is_redo}
+    # feedback present => this render came from a personalize pass; html_details files it separately
+    return {"generate_report": response,
+            "is_after_personalize": bool(personalize_feedback)}
 
 
 

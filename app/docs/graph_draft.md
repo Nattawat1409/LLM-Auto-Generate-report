@@ -7,10 +7,11 @@ flowchart TD
     EXEC --> VERIFY[verify_correctness · data details]
     VERIFY --> HITL{human_in_the_loop<br/>add emphasis / context / exclude rows}
     HITL -->|re-query · data doesn't match intent| T2S
-    HITL -->|approve + emphasis| GEN[generate_report · LLM → HTML]
-    GEN --> HTMLD[html_details · HTML code with details and export .html files]
-    HTMLD --> PDF[generate_pdf]
+    HITL -->|approve + emphasis| GEN[generate_report · LLM → report content]
+    GEN --> HTMLD[html_details · render + apply theme, export .html]
+    HTMLD --> PDF[generate_pdf · export .pdf]
     PDF --> PERS{personalize · review report}
-    PERS -->|report format not satisfy| GEN
+    PERS -->|content only / content and style → regenerate content| GEN
+    PERS -->|style only then skip generate_report → re-style| HTMLD
     PERS -->|everything satisfy| DONE
 ```
