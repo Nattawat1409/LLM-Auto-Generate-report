@@ -88,4 +88,5 @@ output/                 # generated HTML/PDF
 
 ## Status
 
-Internship POC — work in progress.
+DATA AI Engineer Internship @ SCG 
+for POC — work in progress.
