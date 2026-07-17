@@ -22,4 +22,4 @@ async def read_root():
 
 @app.post("/testPost")
 async def get_input():
-    return 
+    return {"user_input":"sucessfully!"}

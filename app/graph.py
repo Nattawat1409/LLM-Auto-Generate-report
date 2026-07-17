@@ -6,8 +6,10 @@ Flow (see docs/graph_draft.md):
         - data-related      -> text2sql -> execute_sql -> verify_correctness
                                -> human_in_the_loop
                                    - re-query -> text2sql
-                                   - approve  -> generate_report -> html_details
+                                   - approve  -> generate_report -> html_details (main flows)
                                                  -> generate_pdf -> personalize
+                                                     - free-text = change content / content + style -> generate_report  (skip html details node)
+                                                     - free-text = change style only -> html_details
                                                      - not satisfy -> generate_report
                                                      - satisfy      -> END
 
@@ -27,7 +29,7 @@ from nodes.generate_report import generateReportNode
 from nodes.html_details import html_details
 from nodes.generate_pdf import generate_pdf
 from nodes.personalize import personalize
-
+from langchain_core.messages import HumanMessage, SystemMessage
 from pathlib import Path # import current path of dir 
 
 
