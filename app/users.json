@@ -1,0 +1,188 @@
+{
+  "users": [
+    {
+      "name": "สมชาย",
+      "age": 30,
+      "address": {
+        "city": "กรุงเทพ",
+        "zipcode": "10110"
+      },
+      "hobbies": [
+        "อ่านหนังสือ",
+        "ว่ายน้ำ"
+      ],
+      "contacts": [
+        {
+          "type": "email",
+          "value": "somchai@example.com"
+        },
+        {
+          "type": "phone",
+          "value": "081-234-5678"
+        }
+      ]
+    },
+    {
+      "name": "สมหญิง",
+      "age": 25,
+      "address": {
+        "city": "เชียงใหม่",
+        "zipcode": "50000"
+      },
+      "hobbies": [
+        "วาดรูป",
+        "ทำอาหาร"
+      ],
+      "contacts": [
+        {
+          "type": "email",
+          "value": "somying@example.com"
+        },
+        {
+          "type": "phone",
+          "value": "082-111-2222"
+        }
+      ]
+    },
+    {
+      "name": "วิชัย",
+      "age": 40,
+      "address": {
+        "city": "ขอนแก่น",
+        "zipcode": "40000"
+      },
+      "hobbies": [
+        "ตกปลา"
+      ],
+      "contacts": [
+        {
+          "type": "email",
+          "value": "wichai@example.com"
+        }
+      ]
+    },
+    {
+      "name": "มาลี",
+      "age": 28,
+      "address": {
+        "city": "ภูเก็ต",
+        "zipcode": "83000"
+      },
+      "hobbies": [
+        "ดำน้ำ",
+        "ถ่ายรูป"
+      ],
+      "contacts": [
+        {
+          "type": "phone",
+          "value": "083-333-4444"
+        }
+      ]
+    },
+    {
+      "name": "ประยุทธ",
+      "age": 35,
+      "address": {
+        "city": "นครราชสีมา",
+        "zipcode": "30000"
+      },
+      "hobbies": [
+        "ปั่นจักรยาน"
+      ],
+      "contacts": [
+        {
+          "type": "email",
+          "value": "prayut@example.com"
+        }
+      ]
+    },
+    {
+      "name": "นารี",
+      "age": 22,
+      "address": {
+        "city": "สงขลา",
+        "zipcode": "90000"
+      },
+      "hobbies": [
+        "เล่นดนตรี",
+        "ร้องเพลง"
+      ],
+      "contacts": [
+        {
+          "type": "phone",
+          "value": "084-555-6666"
+        }
+      ]
+    },
+    {
+      "name": "อนุชา",
+      "age": 33,
+      "address": {
+        "city": "อุดรธานี",
+        "zipcode": "41000"
+      },
+      "hobbies": [
+        "เล่นเกม"
+      ],
+      "contacts": [
+        {
+          "type": "email",
+          "value": "anucha@example.com"
+        }
+      ]
+    },
+    {
+      "name": "กัลยา",
+      "age": 27,
+      "address": {
+        "city": "ระยอง",
+        "zipcode": "21000"
+      },
+      "hobbies": [
+        "ทำสวน",
+        "อ่านหนังสือ"
+      ],
+      "contacts": [
+        {
+          "type": "phone",
+          "value": "085-777-8888"
+        }
+      ]
+    },
+    {
+      "name": "ธนากร",
+      "age": 45,
+      "address": {
+        "city": "ชลบุรี",
+        "zipcode": "20000"
+      },
+      "hobbies": [
+        "กอล์ฟ"
+      ],
+      "contacts": [
+        {
+          "type": "email",
+          "value": "thanakorn@example.com"
+        }
+      ]
+    },
+    {
+      "name": "พิมพ์ใจ",
+      "age": 31,
+      "address": {
+        "city": "นนทบุรี",
+        "zipcode": "11000"
+      },
+      "hobbies": [
+        "โยคะ",
+        "ทำขนม"
+      ],
+      "contacts": [
+        {
+          "type": "phone",
+          "value": "086-999-0000"
+        }
+      ]
+    }
+  ]
+}

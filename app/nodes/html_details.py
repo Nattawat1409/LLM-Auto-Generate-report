@@ -1,3 +1,4 @@
+import base64
 from models import state
 from jinja2 import Environment, FileSystemLoader
 from pathlib import Path
@@ -6,6 +7,15 @@ from datetime import datetime
 # templates live in app/report/templates (this file is app/nodes/html_details.py)
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "report" / "templates" # get location of 4 template
 _env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)))
+
+# Embed the SCG logo as a base64 data URI so the HTML is self-contained: relative
+# img paths break both in WeasyPrint (no base_url) and in the saved .html (lives in
+# output/). Encoded once at import time.
+_LOGO_PATH = Path(__file__).resolve().parent.parent / "report" / "images" / "Scg.png"
+_LOGO_DATA_URI = (
+    "data:image/png;base64," + base64.b64encode(_LOGO_PATH.read_bytes()).decode()
+    if _LOGO_PATH.exists() else ""
+)
 
 # refer path 
 # personalize node traverses this folder to reference the user's previous reports (few-shot).
@@ -31,6 +41,7 @@ def html_details(state: state) -> dict:
         context[key] = state.get(key)
 
     context.setdefault("generated_at", datetime.now().strftime("%Y-%m-%d %H:%M"))
+    context["logo_data_uri"] = _LOGO_DATA_URI   # self-contained SCG logo for the template
 
     template = _env.get_template(f"{report_type}.html")     # call jinja2 template
     html = template.render(**context)

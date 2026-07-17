@@ -10,13 +10,15 @@
     * { box-sizing: border-box; }
     body {
       font-family: "Sarabun", "Helvetica Neue", Arial, sans-serif;
-      color: {{ theme_text_color | default('#1f2933', true) }};
+      color: {{ theme_text_color | default('#111827', true) }};
       font-size: {{ theme_font_size | default('13px', true) }}; margin: 0;
     }
-    .report-header { border-bottom: 3px solid {{ theme_header_color | default('#2563eb', true) }}; padding-bottom: 12px; margin-bottom: 20px; }
-    .report-header h1 { margin: 0 0 6px; font-size: 22px; color: {{ theme_header_color | default('#2563eb', true) }}; }
+    .brand-logo { margin-bottom: 10px; }
+    .brand-logo img { height: 40px; width: auto; }
+    .report-header { border-bottom: 3px solid {{ theme_header_color | default('#EC1C24', true) }}; padding-bottom: 12px; margin-bottom: 20px; }
+    .report-header h1 { margin: 0 0 6px; font-size: 22px; color: {{ theme_header_color | default('#EC1C24', true) }}; }
     .report-header .meta { color: #667085; font-size: 12px; display: flex; gap: 20px; }
-    h2 { font-size: 15px; margin: 24px 0 8px; color: {{ theme_text_color | default('#1e3a8a', true) }}; }
+    h2 { font-size: 15px; margin: 24px 0 8px; color: {{ theme_text_color | default('#38111a', true) }}; }
 
     /* KPI cards */
     .kpi-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 4px 0 8px; }
@@ -30,7 +32,7 @@
     /* Tables */
     table.data { border-collapse: collapse; width: 100%; margin-top: 6px; }
     table.data th, table.data td { border: 1px solid #e4e7ec; padding: 6px 10px; text-align: left; }
-    table.data th { background: #eff6ff; font-weight: 600; }
+    table.data th { background: #EC1C24; font-weight: 600; }
     table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; }
     table.data tr:nth-child(even) td { background: #fafafa; }
 
@@ -43,6 +45,9 @@
   </style>
 </head>
 <body>
+  <div class="brand-logo">
+    {% if logo_data_uri %}<img src="{{ logo_data_uri }}" alt="SCG logo">{% endif %}
+  </div>
   <header class="report-header">
     <h1>{% block heading %}{{ report_title | default("Report") }}{% endblock %}</h1>
     <div class="meta">
