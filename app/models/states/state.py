@@ -58,3 +58,6 @@ class state(TypedDict):
     is_style_change : bool                # flag to generate_report skip node generate_report then go to html_details->generate_pdf (immediately)
     is_content_change: bool               # flag to generate_report content re-run since genereate_report -> html_details -> generate_pdf -> personalize 
     is_style_and_content: bool
+
+
+    output: str
