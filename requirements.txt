@@ -1,0 +1,17 @@
+# --- App / UI ---
+streamlit>=1.40
+
+# --- Database ---
+SQLAlchemy>=2.0
+psycopg2-binary>=2.9      # Postgres driver
+pandas>=2.2              # แสดง/จัดการผล query
+
+# --- LLM (Text2SQL + report generation) ---
+# ใช้ LiteLLM proxy ผ่าน OpenAI-compatible interface -> Gemini 2.5 Flash
+langchain-openai>=0.2
+langchain-core>=0.3
+python-dotenv>=1.0       # โหลดค่าจาก .env
+
+# --- Report rendering ---
+Jinja2>=3.1             # เติมข้อมูลลง HTML template
+weasyprint>=63          # แปลง HTML -> PDF
