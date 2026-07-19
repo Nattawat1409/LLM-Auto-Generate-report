@@ -24,25 +24,51 @@ Full design: `docs/graph_draft.md`. Scope, stack, conventions, guardrails: `CLAU
 
 | Area | Status |
 |---|---|
-| LangGraph graph wired (9 nodes) | ✅ `graph.py`, runs via `cd app && uv run -m graph` (CLI) |
+| LangGraph graph wired (9 nodes) | ✅ `graph.py`, compiled with a `SqliteSaver` checkpointer (`output/checkpoints.sqlite`) |
 | Text2SQL + schema injection + few-shot rules | ✅ passes 15 ground-truth eval cases |
 | SQL self-retry loop (2 retries) | ✅ `executeSQL.py` |
 | verify_correctness (LLM verdict + detail) | ✅ informational, non-blocking |
-| human_in_the_loop (curator: approve/re-query) | ✅ but uses `input()` (CLI-only) |
+| human_in_the_loop (curator: approve/re-query) | ✅ uses `interrupt()` — works from both the CLI and the Gradio UI |
 | generate_report → html_details → generate_pdf | ✅ 4 templates (generic/sales/customer/collection_payment) |
-| personalize 3-way (content / style / both) | ✅ but uses `input()` (CLI-only) |
+| personalize 3-way (content / style / both) | ✅ uses `interrupt()` — works from both the CLI and the Gradio UI |
 | Style personalization (theme_* → base.html) | ✅ |
 | Eval harness | ✅ `evalution_RAG.ipynb` (15 cases, execution-accuracy metric) |
+| **Gradio web UI** (`ui/gradio_app.py`) | ✅ built per `docs/gradio_ui_spec.md`, all 4 screens working end-to-end |
+
+### Phase 0 (interrupt/resume) — done, 2026-07-19
+
+- `nodes/human_in_the_loop.py`: `input()` → `interrupt()`. Payload: `{sql, data, execute_error, is_correct, detail}`. Resume dict: `{"action": "approve", "report_type", "notes"}` or `{"action": "requery", "feedback"}`. Routing (`Command(goto=...)`) unchanged.
+- `nodes/personalize.py`: `input()` → `interrupt()`. Payload: `{html, pdf_path, options: {"1","2","3"}}`. Resume dict: `{"choice": "1"-"5", "feedback"}`. The old CLI `while True` retry loop was removed — the node now branches once per resume, since the UI (radio buttons) only ever sends a valid choice.
+- `graph.py`: `builder.compile(checkpointer=SqliteSaver(sqlite3.connect(...)))`, DB at `output/checkpoints.sqlite`. Added `langgraph-checkpoint-sqlite` to `pyproject.toml` (was missing — only `langgraph-checkpoint` (in-memory) was installed).
+- Each node's `__main__` smoke test now spins up a minimal single-node (or single-node + stub-target) graph with `InMemorySaver` to exercise interrupt/resume in isolation — calling the node function directly no longer works, since `interrupt()` requires an active graph run.
+- Verified with a real end-to-end run (live Postgres + LiteLLM): ask → interrupt at `human_in_the_loop` → resume approve → interrupt at `personalize` → resume accept → END. All assertions passed.
+
+### Phase 1 (Gradio UI) — done, 2026-07-19
+
+- `app/ui/gradio_app.py` (new; `app/ui/__init__.py` added so it's importable as `-m ui.gradio_app`). Single `gr.Blocks` page, 4 `gr.Group`s toggled by visibility per the spec's Screens 1–4. One shared `render(result) -> tuple` helper maps any `graph.invoke(...)` result to updates for every component, used by all three graph-calling handlers (`on_ask`, `on_continue_screen2`, `on_apply_screen3`) — avoids duplicating the interrupt-payload-parsing logic.
+- Only UI state held client-side is `thread_state` (`gr.State`, the thread_id) + `options_state` (the last personalize payload's `{"1","2","3"}` map, needed to translate the clicked radio label back into a `choice` string on resume).
+- **Run:** `cd app && uv run python -m ui.gradio_app` → http://127.0.0.1:7860 (Postgres must be up: `cd Postgre && docker compose up -d`).
+- **Verified via `gradio_client`** (no Chrome extension available this session) driving the live server through the real HTTP/websocket API — same code path a browser hits: ask → screen 2 (SQL/data/verdict rendered) → approve+template → screen 3 (HTML preview + PDF + 3 AI options) → pick a content option → regenerated preview → accept → screen 4 (done). Also verified: non-DB question stays on screen 1 with a message; re-query loops back to screen 2 with a genuinely different SQL query; "describe my own change" with a style-only request (e.g. "make the header dark green") updates the preview without regenerating content.
+
+### Two bugs found + fixed while wiring the UI
+
+1. **Gradio blocked serving the PDF.** `output/pdf_output/` lives at the repo root, outside `app/` (the process cwd when run via `-m ui.gradio_app`) and outside the system temp dir — Gradio's `gr.File`/`gr.HTML` file-serving refuses paths outside cwd/tempdir for security and raised `InvalidPathError`. Fixed by passing `allowed_paths=[OUTPUT_DIR]` to `demo.launch()` (`ui/gradio_app.py`).
+2. A test script bug (not a code bug): calling `graph.invoke(Command(resume=...), config=...)` with a `thread_id` that has no matching checkpoint (e.g. a fresh session that never asked a question) does *not* raise cleanly — it re-enters the graph from `START` with an empty state dict, and blows up several nodes downstream with a confusing Pydantic error (`HumanMessage content` = `None`). Not fixed (it shouldn't come up from the UI, since Apply/Continue buttons are only reachable after a `thread_id` exists) but worth knowing if a future checkpointer swap or multi-worker deployment loses that invariant.
 
 ## 3. What's pending / not done
 
 | Item | Where |
 |---|---|
-| **Gradio web UI** | not started — spec in `docs/gradio_ui_spec.md` |
-| **`input()` → `interrupt()`** in `human_in_the_loop.py` + `personalize.py` | Phase 0, blocks the UI |
-| **Checkpointer** in `graph.py` (`SqliteSaver`) | Phase 0, blocks the UI |
+| Phase 2 polish (`gr.Progress`, disable-buttons-while-running, restyle) | `docs/gradio_ui_spec.md` §8 Phase 2 — not started |
 | FastAPI (`app/api/`) | stub only — **intentionally not used** for the POC (Gradio calls the graph in-process) |
 | User memory / preference persistence | future / post-POC (Notion plan exists) |
+| `app/ui/UI.py` | pre-existing throwaway `gr.ChatInterface` experiment, unrelated to `gradio_app.py` — left in place, safe to delete whenever |
+
+### New minor risks to know about (found during Phase 0/1, not yet acted on)
+
+- **`personalize` re-invokes the options-generating LLM call on every resume.** LangGraph replays a node from the top on each `Command(resume=...)`; only the `interrupt()` call itself returns the cached value, so the `_structured_llm.invoke(...)` for the 3 options runs again (wastes one LLM call, and — since it's not temperature-0 — could theoretically propose different options than what the payload the user actually saw). Harmless for the POC; would need moving the LLM call to before a *second* interrupt if this needs to be eliminated.
+- **msgpack checkpoint warnings**: `Deserializing unregistered type sqlalchemy.engine.row.Row` and `...generate_report.SalesReportData` print on every resume. Non-fatal now (langgraph-checkpoint 4.1.1 just warns), but the warning says this will be **blocked in a future version**. If upgrading `langgraph-checkpoint`, either register these types via `allowed_msgpack_modules` or convert `execute_sql` rows / `generate_report` output to plain dicts before they hit state.
+- **Sales/customer/collection_payment templates have no free-text field.** Their Pydantic schemas (`SalesReportData`, `CustomerReportData`, `CollectionReportData`) are rigid KPI/table structures with no narrative/summary slot (unlike `GenericReportData`, which has `summary` + `sections`). A personalize request like "add an executive summary" against a `sales` report has nowhere in the schema to land, so `generate_report` may return content that's effectively unchanged — this looks like a no-op bug in the UI but is actually a template-schema gap. Verified: the identical request against the `generic` template *does* change the rendered HTML.
 
 ## 4. Known issues / risks to scrutinize first
 
@@ -101,10 +127,16 @@ app/nodes/executeSQL.py            # retry loop
 
 ## 8. Immediate next build step (after review)
 
-**Phase 0** — make the core web-ready (see `docs/gradio_ui_spec.md` §3, §8):
-1. `human_in_the_loop.py`: `input()` → `interrupt()`, read `action`/`report_type`/`notes`/`feedback` from the resumed dict.
-2. `personalize.py`: `input()` → `interrupt()`, pass the 3 generated options in the payload, read `choice`/`feedback`.
-3. `graph.py`: `compile(checkpointer=SqliteSaver.from_conn_string("output/checkpoints.sqlite"))`.
-4. Verify: invoke → assert `__interrupt__` → `Command(resume=...)` → assert it advances.
+~~Phase 0 (interrupt/resume + checkpointer) and Phase 1 (Gradio UI, `ui/gradio_app.py`) are both
+done — see §2 above for what was built and how it was verified.~~
 
-Only after Phase 0 passes: build the Gradio UI (`docs/gradio_ui_spec.md` §4).
+**Next up, in priority order:**
+1. **Phase 2 polish** (`docs/gradio_ui_spec.md` §8 Phase 2): `gr.Progress` during `graph.invoke()`
+   calls (they can take 10–30s live), disable buttons while running, restyle. None of this changes
+   behavior, so it's safe to pick up any time.
+2. Work through the §4 risks below (content-drift fix, personalize classification robustness,
+   `state.py` hygiene, eval harness correctness, SQL casing) — none of these were touched this
+   session; they predate the UI work and still need a reviewer.
+3. Optionally address the three items in the "new minor risks" list in §2 (msgpack checkpoint
+   warnings, personalize's duplicate LLM call on resume, sales/customer/collection_payment
+   templates having no free-text field for narrative-style personalize requests).
