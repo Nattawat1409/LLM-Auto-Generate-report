@@ -1,0 +1,260 @@
+
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <title>Collection / Payment Report</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Sarabun", "Helvetica Neue", Arial, sans-serif;
+      color: #1f2933; font-size: 13px; margin: 0;
+    }
+    .report-header { border-bottom: 3px solid #2563eb; padding-bottom: 12px; margin-bottom: 20px; }
+    .report-header h1 { margin: 0 0 6px; font-size: 22px; }
+    .report-header .meta { color: #667085; font-size: 12px; display: flex; gap: 20px; }
+    h2 { font-size: 15px; margin: 24px 0 8px; color: #1e3a8a; }
+
+    /* KPI cards */
+    .kpi-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 4px 0 8px; }
+    .kpi-card {
+      flex: 1 1 0; min-width: 130px; border: 1px solid #e4e7ec;
+      border-radius: 8px; padding: 12px 14px; background: #f8fafc;
+    }
+    .kpi-label { color: #667085; font-size: 11px; margin-bottom: 4px; }
+    .kpi-value { font-size: 20px; font-weight: 700; color: #111827; }
+
+    /* Tables */
+    table.data { border-collapse: collapse; width: 100%; margin-top: 6px; }
+    table.data th, table.data td { border: 1px solid #e4e7ec; padding: 6px 10px; text-align: left; }
+    table.data th { background: #eff6ff; font-weight: 600; }
+    table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    table.data tr:nth-child(even) td { background: #fafafa; }
+
+    .badge { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .badge.ok { background: #dcfce7; color: #166534; }
+    .badge.warn { background: #fee2e2; color: #991b1b; }
+
+    .report-footer { margin-top: 28px; padding-top: 10px; border-top: 1px solid #e4e7ec;
+      color: #98a2b3; font-size: 11px; text-align: center; }
+  </style>
+</head>
+<body>
+  <header class="report-header">
+    <h1>💳 Collection / Payment Report</h1>
+    <div class="meta">
+      <span>ช่วงข้อมูล: —</span>
+      <span>สร้างเมื่อ: 2026-07-06 17:35</span>
+    </div>
+  </header>
+
+  <main>
+    
+  <p style="color:#667085;margin:0 0 4px">ตัดยอด ณ: </p>
+
+  <section class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">ยอดตั้งบิลรวม</div><div class="kpi-value">9604190.61</div></div>
+    <div class="kpi-card"><div class="kpi-label">เก็บได้แล้ว</div><div class="kpi-value">8853839.23</div></div>
+    <div class="kpi-card"><div class="kpi-label">ยอดคงค้าง</div><div class="kpi-value">750351.38</div></div>
+    <div class="kpi-card"><div class="kpi-label">ลูกค้าค้างชำระ</div><div class="kpi-value">21</div></div>
+  </section>
+
+  <h2>สรุปยอดค้างชำระรายลูกค้า</h2>
+  <table class="data">
+    <thead>
+      <tr><th>ลูกค้า</th><th class="num">ยอดตั้งบิล</th><th class="num">ชำระแล้ว</th><th class="num">คงค้าง</th><th>สถานะ</th></tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>Euro+ Shopping Channel</td>
+        <td class="num">820689.54</td>
+        <td class="num">715738.98</td>
+        <td class="num">104950.56</td>
+        <td>
+          
+            <span class="badge warn">ค้างชำระ</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>The Sharp Gifts Warehouse</td>
+        <td class="num">143536.27</td>
+        <td class="num">59551.38</td>
+        <td class="num">83984.89</td>
+        <td>
+          
+            <span class="badge warn">ค้างชำระ</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>Salzburg Collectables</td>
+        <td class="num">137480.07</td>
+        <td class="num">85060.00</td>
+        <td class="num">52420.07</td>
+        <td>
+          
+            <span class="badge warn">ค้างชำระ</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>Gifts4AllAges.com</td>
+        <td class="num">84340.32</td>
+        <td class="num">33533.47</td>
+        <td class="num">50806.85</td>
+        <td>
+          
+            <span class="badge warn">ค้างชำระ</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>UK Collectables, Ltd.</td>
+        <td class="num">106610.72</td>
+        <td class="num">61167.18</td>
+        <td class="num">45443.54</td>
+        <td>
+          
+            <span class="badge warn">ค้างชำระ</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>Scandinavian Gift Ideas</td>
+        <td class="num">120943.53</td>
+        <td class="num">76776.44</td>
+        <td class="num">44167.09</td>
+        <td>
+          
+            <span class="badge warn">ค้างชำระ</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>Tekni Collectables Inc.</td>
+        <td class="num">81806.55</td>
+        <td class="num">38281.51</td>
+        <td class="num">43525.04</td>
+        <td>
+          
+            <span class="badge warn">ค้างชำระ</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>Souveniers And Things Co.</td>
+        <td class="num">133907.12</td>
+        <td class="num">91655.61</td>
+        <td class="num">42251.51</td>
+        <td>
+          
+            <span class="badge warn">ค้างชำระ</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>La Rochelle Gifts</td>
+        <td class="num">158573.12</td>
+        <td class="num">116949.68</td>
+        <td class="num">41623.44</td>
+        <td>
+          
+            <span class="badge warn">ค้างชำระ</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>Land of Toys Inc.</td>
+        <td class="num">149085.15</td>
+        <td class="num">107639.94</td>
+        <td class="num">41445.21</td>
+        <td>
+          
+            <span class="badge warn">ค้างชำระ</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>GiftsForHim.com</td>
+        <td class="num">94431.76</td>
+        <td class="num">56662.38</td>
+        <td class="num">37769.38</td>
+        <td>
+          
+            <span class="badge warn">ค้างชำระ</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>L'ordine Souveniers</td>
+        <td class="num">125505.57</td>
+        <td class="num">90143.31</td>
+        <td class="num">35362.26</td>
+        <td>
+          
+            <span class="badge warn">ค้างชำระ</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>Extreme Desk Decorations, Ltd</td>
+        <td class="num">90332.38</td>
+        <td class="num">66704.94</td>
+        <td class="num">23627.44</td>
+        <td>
+          
+            <span class="badge warn">ค้างชำระ</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>Volvo Model Replicas, Co</td>
+        <td class="num">66694.82</td>
+        <td class="num">43680.65</td>
+        <td class="num">23014.17</td>
+        <td>
+          
+            <span class="badge warn">ค้างชำระ</span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td>Kelly's Gift Shop</td>
+        <td class="num">137460.79</td>
+        <td class="num">114497.19</td>
+        <td class="num">22963.60</td>
+        <td>
+          
+            <span class="badge warn">ค้างชำระ</span>
+          
+        </td>
+      </tr>
+      
+    </tbody>
+  </table>
+
+  </main>
+
+  <footer class="report-footer">
+    LLM Auto-Generate Report · classicmodels
+  </footer>
+</body>
+</html>
