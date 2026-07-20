@@ -48,14 +48,7 @@ def human_in_the_loop(state: state) -> Command[Literal["generate_report", "text2
 
 
 if __name__ == "__main__":
-    # result = human_in_the_loop({
-    #     "execute_sql": [('Classic Cars', 1929192), ('Vintage Cars', 856245),('Motorcycles', 573312), ('Trucks and Buses', 549822),
-    #                     ('Planes', 508881), ('Ships', 335113), ('Trains', 72802)],
-    #     "detail_verify_correctness": """Total revenue by product line in 2004. 7 product lines returned.
-    #                                 Top: Classic Cars ($1,929,192). Bottom: Trains ($72,802).""",
-    # })
-    # print("\nReturned:", result)
-
+    
     resul2 = human_in_the_loop({
         "execute_sql": [(103, 'Atelier graphique', 'FR'), (112, 'Signal Gift Stores', 'US'),
                         (114, 'Australian Collectors, Co.', 'AU'), (119, 'La Rochelle Gifts', 'FR'),
