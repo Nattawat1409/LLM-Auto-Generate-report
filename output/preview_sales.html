@@ -1,0 +1,164 @@
+
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <title>Sales Report</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Sarabun", "Helvetica Neue", Arial, sans-serif;
+      color: #1f2933; font-size: 13px; margin: 0;
+    }
+    .report-header { border-bottom: 3px solid #2563eb; padding-bottom: 12px; margin-bottom: 20px; }
+    .report-header h1 { margin: 0 0 6px; font-size: 22px; }
+    .report-header .meta { color: #667085; font-size: 12px; display: flex; gap: 20px; }
+    h2 { font-size: 15px; margin: 24px 0 8px; color: #1e3a8a; }
+
+    /* KPI cards */
+    .kpi-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 4px 0 8px; }
+    .kpi-card {
+      flex: 1 1 0; min-width: 130px; border: 1px solid #e4e7ec;
+      border-radius: 8px; padding: 12px 14px; background: #f8fafc;
+    }
+    .kpi-label { color: #667085; font-size: 11px; margin-bottom: 4px; }
+    .kpi-value { font-size: 20px; font-weight: 700; color: #111827; }
+
+    /* Tables */
+    table.data { border-collapse: collapse; width: 100%; margin-top: 6px; }
+    table.data th, table.data td { border: 1px solid #e4e7ec; padding: 6px 10px; text-align: left; }
+    table.data th { background: #eff6ff; font-weight: 600; }
+    table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    table.data tr:nth-child(even) td { background: #fafafa; }
+
+    .badge { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .badge.ok { background: #dcfce7; color: #166534; }
+    .badge.warn { background: #fee2e2; color: #991b1b; }
+
+    .report-footer { margin-top: 28px; padding-top: 10px; border-top: 1px solid #e4e7ec;
+      color: #98a2b3; font-size: 11px; text-align: center; }
+  </style>
+</head>
+<body>
+  <header class="report-header">
+    <h1>📈 Sales Report</h1>
+    <div class="meta">
+      <span>ช่วงข้อมูล: 2004</span>
+      <span>สร้างเมื่อ: 2026-07-06 17:35</span>
+    </div>
+  </header>
+
+  <main>
+    
+  <section class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">ยอดขายรวม</div><div class="kpi-value">$4,515,905.51</div></div>
+    <div class="kpi-card"><div class="kpi-label">จำนวนออเดอร์</div><div class="kpi-value">149</div></div>
+    <div class="kpi-card"><div class="kpi-label">ยอดเฉลี่ย/ออเดอร์</div><div class="kpi-value">$30,308.09</div></div>
+    <div class="kpi-card"><div class="kpi-label">สินค้าที่ขาย</div><div class="kpi-value">49,487</div></div>
+  </section>
+
+  <h2>ยอดขายรายเดือน</h2>
+  <table class="data">
+    <thead><tr><th>เดือน</th><th class="num">ยอดขาย</th><th class="num">ออเดอร์</th></tr></thead>
+    <tbody>
+      
+      <tr><td>January 2004</td><td class="num">$292,385.21</td><td class="num">8</td></tr>
+      
+      <tr><td>February 2004</td><td class="num">$289,502.84</td><td class="num">11</td></tr>
+      
+      <tr><td>March 2004</td><td class="num">$217,691.26</td><td class="num">8</td></tr>
+      
+      <tr><td>April 2004</td><td class="num">$187,575.77</td><td class="num">10</td></tr>
+      
+      <tr><td>May 2004</td><td class="num">$248,325.30</td><td class="num">8</td></tr>
+      
+      <tr><td>June 2004</td><td class="num">$343,370.74</td><td class="num">12</td></tr>
+      
+      <tr><td>July 2004</td><td class="num">$325,563.49</td><td class="num">11</td></tr>
+      
+      <tr><td>August 2004</td><td class="num">$419,327.09</td><td class="num">12</td></tr>
+      
+      <tr><td>September 2004</td><td class="num">$283,799.80</td><td class="num">12</td></tr>
+      
+      <tr><td>October 2004</td><td class="num">$500,233.86</td><td class="num">13</td></tr>
+      
+      <tr><td>November 2004</td><td class="num">$979,291.98</td><td class="num">33</td></tr>
+      
+      <tr><td>December 2004</td><td class="num">$428,838.17</td><td class="num">13</td></tr>
+      
+    </tbody>
+  </table>
+
+  <h2>ยอดขายตาม Product Line</h2>
+  <table class="data">
+    <thead><tr><th>Product Line</th><th class="num">ยอดขาย</th><th class="num">จำนวนชิ้น</th></tr></thead>
+    <tbody>
+      
+      <tr><td>Classic Cars</td><td class="num">$1,763,136.73</td><td class="num">16,085</td></tr>
+      
+      <tr><td>Vintage Cars</td><td class="num">$854,551.85</td><td class="num">10,864</td></tr>
+      
+      <tr><td>Motorcycles</td><td class="num">$527,243.84</td><td class="num">5,976</td></tr>
+      
+      <tr><td>Planes</td><td class="num">$471,971.46</td><td class="num">5,820</td></tr>
+      
+      <tr><td>Trucks and Buses</td><td class="num">$465,390.00</td><td class="num">5,024</td></tr>
+      
+      <tr><td>Ships</td><td class="num">$337,326.10</td><td class="num">4,309</td></tr>
+      
+      <tr><td>Trains</td><td class="num">$96,285.53</td><td class="num">1,409</td></tr>
+      
+    </tbody>
+  </table>
+
+  <h2>Top Products</h2>
+  <table class="data">
+    <thead><tr><th>สินค้า</th><th>Product Line</th><th class="num">จำนวน</th><th class="num">ยอดขาย</th></tr></thead>
+    <tbody>
+      
+      <tr><td>1992 Ferrari 360 Spider red</td><td>Classic Cars</td><td class="num">789</td><td class="num">$120,381.40</td></tr>
+      
+      <tr><td>2001 Ferrari Enzo</td><td>Classic Cars</td><td class="num">566</td><td class="num">$105,487.46</td></tr>
+      
+      <tr><td>1952 Alpine Renault 1300</td><td>Classic Cars</td><td class="num">445</td><td class="num">$87,995.42</td></tr>
+      
+      <tr><td>2003 Harley-Davidson Eagle Drag Bike</td><td>Motorcycles</td><td class="num">462</td><td class="num">$81,636.19</td></tr>
+      
+      <tr><td>1980s Black Hawk Helicopter</td><td>Planes</td><td class="num">567</td><td class="num">$80,076.41</td></tr>
+      
+    </tbody>
+  </table>
+
+  <h2>ยอดขายตาม Sales Rep</h2>
+  <table class="data">
+    <thead><tr><th>Sales Rep</th><th>Office</th><th class="num">ยอดขาย</th><th class="num">ออเดอร์</th></tr></thead>
+    <tbody>
+      
+      <tr><td>Gerard Hernandez</td><td>Paris</td><td class="num">$534,575.67</td><td class="num">18</td></tr>
+      
+      <tr><td>George Vanauf</td><td>NYC</td><td class="num">$428,062.73</td><td class="num">13</td></tr>
+      
+      <tr><td>Pamela Castillo</td><td>Paris</td><td class="num">$409,910.07</td><td class="num">14</td></tr>
+      
+      <tr><td>Barry Jones</td><td>London</td><td class="num">$388,872.38</td><td class="num">14</td></tr>
+      
+      <tr><td>Peter Marsh</td><td>Sydney</td><td class="num">$338,782.84</td><td class="num">9</td></tr>
+      
+      <tr><td>Steve Patterson</td><td>Boston</td><td class="num">$337,260.95</td><td class="num">11</td></tr>
+      
+      <tr><td>Leslie Jennings</td><td>San Francisco</td><td class="num">$332,370.22</td><td class="num">11</td></tr>
+      
+      <tr><td>Larry Bott</td><td>London</td><td class="num">$317,142.14</td><td class="num">10</td></tr>
+      
+    </tbody>
+  </table>
+
+  </main>
+
+  <footer class="report-footer">
+    LLM Auto-Generate Report · classicmodels
+  </footer>
+</body>
+</html>
