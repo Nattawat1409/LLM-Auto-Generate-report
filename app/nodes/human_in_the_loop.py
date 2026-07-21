@@ -1,6 +1,6 @@
 from typing import Literal
 from langgraph.types import Command
-from models import state
+from app.models import state
 
 # the report templates the user can pick (report/templates/{name}.html)
 # "generic" fallback for ad-hoc queries + 3 fixed formats

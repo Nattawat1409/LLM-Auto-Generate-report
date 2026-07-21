@@ -1,6 +1,6 @@
-from db.schema import get_schema_text
-from llm.client import llm
-from models import state
+from app.db.schema import get_schema_text
+from app.llm.client import llm
+from app.models import state
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
@@ -157,7 +157,7 @@ def Text2SQLNode(state: state) -> dict:
 
 # test standalone function #
 if __name__ == "__main__":
-    from nodes.schema import schema
+    from app.nodes.schema import schema
     qusetion = "List customers who have exceeded their credit limit based on total orders placed, showing how much over the limit they are."
     read_question = schema({"user_input": qusetion})
     result = Text2SQLNode({

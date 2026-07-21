@@ -10,7 +10,7 @@ if os.path.isdir(_BREW_LIB):
 
 # After set-up dynamic loader able to find
 from weasyprint import HTML   # noqa: E402  (must come after the env var above)
-from models.states import state
+from app.models.states import state
 
 # to reference path :  parents[2] = /Users/nattawat1409/Desktop/LLM-Auto-Generate-report
 # PDFs mirror the HTML layout: output/pdf_output/ (+ /after_personalize for personalize passes)
@@ -43,8 +43,8 @@ def generate_pdf(state: state) -> dict:
 
 # TEST STANDALONE: generate_report -> html_details -> generate_pdf #
 if __name__ == "__main__":
-    from nodes.generate_report import generateReportNode
-    from nodes.html_details import html_details
+    from app.nodes.generate_report import generateReportNode
+    from app.nodes.html_details import html_details
 
     report_type = "generic"
     

@@ -1,5 +1,5 @@
 import base64
-from models import state
+from app.models import state
 from jinja2 import Environment, FileSystemLoader
 from pathlib import Path
 from datetime import datetime
@@ -63,7 +63,7 @@ def html_details(state: state) -> dict:
 
 # test standalone: build content with generate_report, then render it #
 if __name__ == "__main__":
-    from nodes.generate_report import generateReportNode    # generate_report node
+    from app.nodes.generate_report import generateReportNode    # generate_report node
 
     # TEST ALL OF 4 TEMPLATES FORMAT #
     CASES = {

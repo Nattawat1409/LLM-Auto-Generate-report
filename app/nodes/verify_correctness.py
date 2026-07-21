@@ -1,6 +1,6 @@
-from models import state
-from db.schema import get_schema_text
-from llm.client import llm
+from app.models import state
+from app.db.schema import get_schema_text
+from app.llm.client import llm
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
@@ -62,8 +62,8 @@ def verifyCorrectnessNode(state: state) -> dict:
 
 # test standalone function (wire 3 function corporate together) #
 if __name__ == "__main__":
-    from nodes.text2sql import Text2SQLNode # from other module
-    from nodes.executeSQL import executeSQLNode # from other module
+    from app.nodes.text2sql import Text2SQLNode # from other module
+    from app.nodes.executeSQL import executeSQLNode # from other module
     
     user_input = "generate report for number of offices in the database and their locations" # test it for i can generate the report 
     text2sql_result = Text2SQLNode({"user_input": user_input})

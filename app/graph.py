@@ -19,16 +19,16 @@ The rest are linear and wired with static edges.
 """
 from langgraph.graph import StateGraph, START, END
 
-from models import state
-from nodes.schema import schema
-from nodes.text2sql import Text2SQLNode
-from nodes.executeSQL import executeSQLNode
-from nodes.verify_correctness import verifyCorrectnessNode
-from nodes.human_in_the_loop import human_in_the_loop
-from nodes.generate_report import generateReportNode
-from nodes.html_details import html_details
-from nodes.generate_pdf import generate_pdf
-from nodes.personalize import personalize
+from .models.states import state
+from .nodes.schema import schema
+from .nodes.text2sql import Text2SQLNode
+from .nodes.executeSQL import executeSQLNode
+from .nodes.verify_correctness import verifyCorrectnessNode
+from .nodes.human_in_the_loop import human_in_the_loop
+from .nodes.generate_report import generateReportNode
+from .nodes.html_details import html_details
+from .nodes.generate_pdf import generate_pdf
+from .nodes.personalize import personalize
 from pathlib import Path # import current path of dir 
 
 
@@ -63,10 +63,6 @@ def build_graph():
     builder.add_edge("generate_report", "html_details")
     builder.add_edge("html_details", "generate_pdf")
     builder.add_edge("generate_pdf", "personalize")
-
-    # personalize routes itself via Command: -> "generate_report" (content / both),
-    #   "html_details" (style-only, skips generate_report), or END (accept).
-    # No static edge here — it would fight the Command(goto=...) routing.
 
     return builder.compile()
 

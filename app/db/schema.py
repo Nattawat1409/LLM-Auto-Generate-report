@@ -4,7 +4,7 @@ from pathlib import Path
 
 from sqlalchemy import inspect
 
-from db.engine import engine
+from app.db.engine import engine
 
 # get real schema text from the actual database #
 def get_schema_text() -> str:

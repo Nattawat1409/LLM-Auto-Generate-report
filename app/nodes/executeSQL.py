@@ -1,7 +1,7 @@
 from typing import Literal
 
-from models.states import state
-from db import engine
+from app.models.states import state
+from app.db import engine
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from langgraph.types import Command
@@ -70,7 +70,7 @@ def executeSQLNode(state: state) -> Command[Literal["verify_correctness", "text2
 
 # Test function incorporate with each other (wired to text2sql) #
 if __name__ == "__main__":
-    from nodes.text2sql import Text2SQLNode
+    from app.nodes.text2sql import Text2SQLNode
 
     text2sql_result = Text2SQLNode({"user_input": "generate report for number of offices in the database and their locations"})
     result = executeSQLNode({"output_text2SQL": text2sql_result["output_text2SQL"]})
