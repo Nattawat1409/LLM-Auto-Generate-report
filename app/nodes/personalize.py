@@ -5,8 +5,8 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.types import Command, interrupt
 from langgraph.graph import END
 from pydantic import BaseModel, Field
-from llm import llm
-from models import state
+from app.llm import llm
+from app.models import state
 
 
 # ── 1. Parse classify free-text is "style" , "content" or "style and content" ────────────────

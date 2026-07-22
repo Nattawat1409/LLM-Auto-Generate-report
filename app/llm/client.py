@@ -1,8 +1,9 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")  # app/.env, regardless of cwd
 
 
 llm = ChatOpenAI(

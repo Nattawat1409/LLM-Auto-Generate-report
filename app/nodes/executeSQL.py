@@ -28,7 +28,10 @@ def executeSQLNode(state: state) -> Command[Literal["verify_correctness", "text2
             result = connection.execute(text(sql_query))
             # Fetch all rows while the connection is still open, then it's
             # released back to the pool as soon as this block exits.
-            rows = result.fetchall()
+            # Convert to plain tuples: SQLAlchemy Row objects don't survive a
+            # pickle round-trip outside their originating Result (they come back
+            # as None after a checkpoint reload via graph.get_state()).
+            rows = [tuple(r) for r in result.fetchall()]
     except SQLAlchemyError as error:
         print(f"The error from SQL execution: {error}")
         retries = state.get("sql_retry_count") or 0

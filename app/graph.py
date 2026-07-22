@@ -17,25 +17,28 @@ Three nodes route themselves by returning a `Command(goto=...)`:
     schema, human_in_the_loop, personalize
 The rest are linear and wired with static edges.
 """
-import sqlite3
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+from psycopg import Connection
+from psycopg.rows import dict_row
 
 from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.checkpoint.postgres import PostgresSaver
 
-from models import state
-from nodes.schema import schema
-from nodes.text2sql import Text2SQLNode
-from nodes.executeSQL import executeSQLNode
-from nodes.verify_correctness import verifyCorrectnessNode
-from nodes.human_in_the_loop import human_in_the_loop
-from nodes.generate_report import generateReportNode
-from nodes.html_details import html_details
-from nodes.generate_pdf import generate_pdf
-from nodes.personalize import personalize
-from pathlib import Path # import current path of dir
+from app.models import state
+from app.nodes.schema import schema
+from app.nodes.text2sql import Text2SQLNode
+from app.nodes.executeSQL import executeSQLNode
+from app.nodes.verify_correctness import verifyCorrectnessNode
+from app.nodes.human_in_the_loop import human_in_the_loop
+from app.nodes.generate_report import generateReportNode
+from app.nodes.html_details import html_details
+from app.nodes.generate_pdf import generate_pdf
+from app.nodes.personalize import personalize
 
-# repo root output/ dir (this file lives at app/graph.py -> parents[1] = repo root)
-CHECKPOINT_DB_PATH = Path(__file__).resolve().parents[1] / "output" / "checkpoints.sqlite"
+# app/.env, regardless of cwd (see app/db/engine.py, app/llm/client.py for the same pattern)
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 
 def build_graph():
@@ -54,36 +57,34 @@ def build_graph():
 
     # entry
     builder.add_edge(START, "schema")
-
-    # schema routes itself: -> "text2sql" or END (Command)
-
-    # linear data path
     builder.add_edge("text2sql", "execute_sql")
-    # execute_sql routes itself: -> "verify_correctness" (ok / exhausted) or
-    #   "text2sql" (retry the invalid SQL) via Command
     builder.add_edge("verify_correctness", "human_in_the_loop")
 
-    # human_in_the_loop routes itself: -> "generate_report" or "text2sql" (Command)
-
-    # linear report path
     builder.add_edge("generate_report", "html_details")
     builder.add_edge("html_details", "generate_pdf")
     builder.add_edge("generate_pdf", "personalize")
 
-    # personalize routes itself via Command: -> "generate_report" (content / both),
-    #   "html_details" (style-only, skips generate_report), or END (accept).
-    # No static edge here — it would fight the Command(goto=...) routing.
-
-    # human_in_the_loop and personalize call interrupt() — a checkpointer is mandatory
-    # so the graph can pause/resume across separate invoke() calls (e.g. Gradio requests).
-    CHECKPOINT_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(CHECKPOINT_DB_PATH), check_same_thread=False)
-    checkpointer = SqliteSaver(conn)
+    conn = Connection.connect(
+        os.environ["CHECKPOINT_DATABASE_URL"],
+        autocommit=True,
+        prepare_threshold=0,
+        row_factory=dict_row,
+    )
+    checkpointer = PostgresSaver(conn) # record as check pointer use persistent memory storage
 
     return builder.compile(checkpointer=checkpointer)
 
 
 graph = build_graph() # build graph
+
+
+def close_checkpointer() -> None:
+    """Close the long-lived Postgres connection backing the checkpointer.
+
+    Called from api/services/workflow.py on FastAPI shutdown — graph.py itself
+    has no lifespan hook to run this automatically.
+    """
+    graph.checkpointer.conn.close()
 
 
 #____TEST FLOW FULL GRAPH____ #
