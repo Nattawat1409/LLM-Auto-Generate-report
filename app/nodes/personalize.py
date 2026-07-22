@@ -2,11 +2,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal , Optional
 from langchain_core.messages import HumanMessage, SystemMessage
-from langgraph.types import Command
+from langgraph.types import Command, interrupt
 from langgraph.graph import END
 from pydantic import BaseModel, Field
-from app.llm import llm
-from app.models import state
+from llm import llm
+from models import state
 
 
 # ── 1. Parse classify free-text is "style" , "content" or "style and content" ────────────────
@@ -99,13 +99,14 @@ def personalize(state: state) -> Command[Literal["generate_report", "html_detail
     Human-in-the-loop personalisation node.
 
     Reads HTML from state['html_detail'], asks the LLM to propose
-    3 personalisation options, then lets the user choose 1-3 (AI option),
-    4 (free text), or 5 (accept as-is).
+    3 personalisation options, then pauses via interrupt() so a UI can render
+    them as radio choices: 1-3 (AI option), 4 (free text), or 5 (accept as-is).
 
     Routing
     -------
-    choices 1-4  →  "generate_report"   (regenerate with preference)
-    choice  5    →  END                 (accept report)
+    choices 1-3, and 4 classified content/content+style  →  "generate_report"
+    choice 4 classified style-only                       →  "html_details"
+    choice  5                                             →  END (accept report)
     """
 
     # ── Load HTML from state (produced by html_details node) ─────────────
@@ -140,101 +141,87 @@ def personalize(state: state) -> Command[Literal["generate_report", "html_detail
         ]
     )
 
-    # ── Display options ───────────────────────────────────────────────────
+    # ── Options for the UI to render as radio choices ─────────────────────
     option_map = {
         "1": options.option1,
         "2": options.option2,
         "3": options.option3,
     }
 
-    print("─" * 65)
-    print("  📝  How would you like to personalise the report?\n")
-    for key, text in option_map.items():
-        print(f"  [{key}]  {text}")
-    print(f"  [4]  ✏️   Enter your own preference (free text)")
-    print(f"  [5]  ✅  Accept report as-is  →  finish")
-    print("─" * 65)
+    # ── Pause the graph: surface the report + options, resume with the choice ──
+    response = interrupt({
+        "html": html_content,
+        "pdf_path": state.get("generate_pdf"),
+        "options": option_map,
+    })
 
-    # ── Collect user choice (loop until valid) ────────────────────────────
+    choice = (response.get("choice") or "").strip()
+    user_input = (response.get("feedback") or "").strip()
+
     preference: str = ""
     goto: str
+    is_satisfy = False
 
-    while True:
-        choice = input("\nEnter your choice (1-5): ").strip()
+    if choice in option_map:                            # AI-proposed option
+        preference = option_map[choice]
+        goto = "generate_report"
 
-        if choice in option_map:                        # AI-proposed option
-            preference = option_map[choice]
-            goto = "generate_report"
-            print(f"\n✔  Selected: {preference}")
-            break
+    elif choice == "4":                                  # Free text
+        if not user_input:
+            raise ValueError("Choice 4 ('Describe my own change') requires non-empty feedback text.")
 
-        elif choice == "4":                             # Free text
-            user_input = input("Describe your preference: ").strip()
-            # parse use_input "content" or "style"
-            if not user_input:
-                print("  ⚠  Cannot be empty. Try again.")
-                continue
-            
-            refine_type = llm_parse_type.invoke([
-                SystemMessage(content=_REFINE_PROMPT),
+        # parse use_input "content" or "style"
+        refine_type = llm_parse_type.invoke([
+            SystemMessage(content=_REFINE_PROMPT),
+            HumanMessage(content=user_input),
+        ]).check_type_refine
+
+        # parse CSS-ready style values whenever style is involved (cases 1 and 3)
+        style = None
+        if refine_type in ("style", "content and style"):
+            style = _style_parse_llm.invoke([
+                SystemMessage(content=_STYLE_PARSE_PROMPT),
                 HumanMessage(content=user_input),
-            ]).check_type_refine
+            ])
 
-            # parse CSS-ready style values whenever style is involved (cases 1 and 3)
-            style = None
-            if refine_type in ("style", "content and style"):
-                style = _style_parse_llm.invoke([
-                    SystemMessage(content=_STYLE_PARSE_PROMPT),
-                    HumanMessage(content=user_input),
-                ])
-
-            # CASE 1 — style only: SKIP generate_report, restyle existing content in html_details
-            if refine_type == "style":
-                print("\n✔  Style change → skipping content regeneration, restyling report.")
-                return Command(goto="html_details", update={
-                    "is_style_change": True,
-                    "is_content_change": False,
-                    "theme_text_color": style.text_color,
-                    "theme_header_color": style.header_color,
-                    "theme_footer_color": style.footer_color,
-                    "theme_font_size": style.font_size,
-                    "is_after_personalize": True,               # existed html_details files it under after_personalize/ 
-                    "is_satisfy_personalize_report": False,
-                })
-
-            # CASE 3 — content AND style: refine content in generate_report, then restyle in html_details
-            if refine_type == "content and style":
-                print("\n✔  Content + style change → regenerating content, then restyling.")
-                return Command(goto="generate_report", update={
-                    "is_content_change": True,
-                    "is_style_change": True,
-                    "personalize_report": user_input,   # content feedback for generate_report
-                    "theme_text_color": style.text_color,
-                    "theme_header_color": style.header_color,
-                    "theme_footer_color": style.footer_color,
-                    "theme_font_size": style.font_size,
-                    "is_satisfy_personalize_report": False,
-                })
-
-            # CASE 2 — content only: traditional refine through generate_report -> html_details
-            print("\n✔  Content change → regenerating report content.")
-            return Command(goto="generate_report", update={
-                "is_content_change": True,
-                "is_style_change": False,
-                "personalize_report": user_input,       # content feedback for generate_report
+        # CASE 1 — style only: SKIP generate_report, restyle existing content in html_details
+        if refine_type == "style":
+            return Command(goto="html_details", update={
+                "is_style_change": True,
+                "is_content_change": False,
+                "theme_text_color": style.text_color,
+                "theme_header_color": style.header_color,
+                "theme_footer_color": style.footer_color,
+                "theme_font_size": style.font_size,
+                "is_after_personalize": True,               # existed html_details files it under after_personalize/
                 "is_satisfy_personalize_report": False,
             })
 
+        # CASE 3 — content AND style: refine content in generate_report, then restyle in html_details
+        if refine_type == "content and style":
+            return Command(goto="generate_report", update={
+                "is_content_change": True,
+                "is_style_change": True,
+                "personalize_report": user_input,   # content feedback for generate_report
+                "theme_text_color": style.text_color,
+                "theme_header_color": style.header_color,
+                "theme_footer_color": style.footer_color,
+                "theme_font_size": style.font_size,
+                "is_satisfy_personalize_report": False,
+            })
 
-        elif choice == "5":                             # Accept as-is
-            is_satisfy = True     # if satisfy return true
-            preference = ""
-            goto = END
-            print("\n✔  Report accepted.")
-            break
+        # CASE 2 — content only: traditional refine through generate_report -> html_details
+        return Command(goto="generate_report", update={
+            "is_content_change": True,
+            "is_style_change": False,
+            "personalize_report": user_input,       # content feedback for generate_report
+            "is_satisfy_personalize_report": False,
+        })
 
-        else:
-            print("  ⚠  Invalid. Please enter 1, 2, 3, 4, or 5.")
+    else:                                                # choice "5" (or anything else) — accept as-is
+        is_satisfy = True
+        preference = ""
+        goto = END
 
     # ── Return Command with routing + state update ────────────────────────
     # AI options 1-3 are content edits (goto generate_report); choice 5 accepts (goto END).
@@ -248,7 +235,7 @@ def personalize(state: state) -> Command[Literal["generate_report", "html_detail
     )
 
 
-# ── Smoke test ────────────────────────────────────────────────────────────────
+# UNIT TEST ------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     # grab the most recently generated HTML report (any type)
@@ -266,7 +253,28 @@ if __name__ == "__main__":
 
     mock_state = {
         "html_detail": sample_path.read_text(encoding="utf-8"),
+        "html_path": str(sample_path),
     }
 
-    result = personalize(mock_state)
-    print("\nCommand →", result)
+    # minimal graph to exercise the interrupt()/resume contract in isolation.
+    # generate_report/html_details are stand-ins so Command(goto=...) has a valid
+    # target; the real graph (graph.py) wires the actual nodes.
+    from langgraph.graph import StateGraph, START, END as GRAPH_END
+    from langgraph.checkpoint.memory import InMemorySaver
+
+    builder = StateGraph(state)
+    builder.add_node("personalize", personalize)
+    builder.add_node("generate_report", lambda s: {})
+    builder.add_node("html_details", lambda s: {})
+    builder.add_edge(START, "personalize")
+    builder.add_edge("generate_report", GRAPH_END)
+    builder.add_edge("html_details", GRAPH_END)
+    test_graph = builder.compile(checkpointer=InMemorySaver())
+
+    config = {"configurable": {"thread_id": "smoke-test-personalize"}}
+    result = test_graph.invoke(mock_state, config=config)
+    interrupt_payload = result["__interrupt__"][0].value
+    print("\nOptions offered:", interrupt_payload["options"])
+
+    resumed = test_graph.invoke(Command(resume={"choice": "5", "feedback": ""}), config=config)
+    print("\nResumed (accept) →", resumed)
